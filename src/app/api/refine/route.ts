@@ -1,0 +1,102 @@
+import { assembleRefineInstruction } from "@/lib/ai/prompt";
+import { renderRoom } from "@/lib/ai/render";
+import { critiqueRender } from "@/lib/ai/critique";
+import { dataUrlToImageInput, urlToImageInput } from "@/lib/ai/images";
+import { designBriefSchema } from "@/lib/ai/schemas";
+import {
+  apiError,
+  checkAiConfig,
+  checkBlobConfig,
+  streamStatus,
+} from "@/lib/api";
+
+export const runtime = "nodejs";
+export const maxDuration = 300;
+
+export async function POST(request: Request) {
+  const aiError = checkAiConfig();
+  if (aiError) return aiError;
+  const blobError = checkBlobConfig();
+  if (blobError) return blobError;
+
+  try {
+    const body = await request.json();
+    const {
+      designBrief,
+      roomImage,
+      currentRenderUrl,
+      instruction,
+      styleReferences = [],
+      qualityGate = true,
+      stream,
+    } = body;
+
+    const parsedBrief = designBriefSchema.safeParse(designBrief);
+    if (!parsedBrief.success) {
+      return apiError("Invalid design brief", 400);
+    }
+
+    if (!roomImage || !currentRenderUrl || !instruction) {
+      return apiError(
+        "Room image, current render, and refinement instruction are required",
+        400,
+      );
+    }
+
+    const roomImageInput = dataUrlToImageInput(roomImage);
+    const currentRender = await urlToImageInput(currentRenderUrl);
+    const styleRefInputs = (styleReferences as string[]).map((url) =>
+      dataUrlToImageInput(url),
+    );
+    const refineInstruction = assembleRefineInstruction(
+      parsedBrief.data,
+      instruction,
+    );
+
+    const runRefine = async (send?: (status: string) => void) => {
+      send?.("Applying refinement…");
+
+      let result = await renderRoom({
+        instruction: refineInstruction,
+        roomImage: roomImageInput,
+        styleReferences: styleRefInputs,
+        currentRender,
+      });
+
+      if (qualityGate) {
+        send?.("Running quality check…");
+        const renderImage = await urlToImageInput(result.imageUrl);
+        const critique = await critiqueRender({
+          brief: parsedBrief.data,
+          renderImage,
+          roomImage: roomImageInput,
+        });
+
+        if (!critique.passed && critique.correctiveInstruction) {
+          send?.("Auto-refining based on quality check…");
+          const correctionInstruction = `${refineInstruction}\n\nCORRECTION REQUIRED:\n${critique.correctiveInstruction}`;
+          result = await renderRoom({
+            instruction: correctionInstruction,
+            roomImage: roomImageInput,
+            styleReferences: styleRefInputs,
+            currentRender: renderImage,
+          });
+        }
+      }
+
+      send?.("Refinement complete");
+      return result;
+    };
+
+    if (stream) {
+      return streamStatus(async (send) => runRefine(send));
+    }
+
+    const result = await runRefine();
+    return Response.json(result);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Refinement failed";
+    return apiError(message);
+  }
+}
