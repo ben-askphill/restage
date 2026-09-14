@@ -294,6 +294,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
               <UploadZone
                 label="Add images"
                 description="Upload more inspiration to enrich this style"
+                badge="Optional"
                 files={NO_FILES}
                 onChange={handleAddImages}
                 multiple

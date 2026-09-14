@@ -351,7 +351,8 @@ export function RestageApp() {
                       )}
                       <UploadZone
                         label="Style references"
-                        description="Optional — mood and material inspiration"
+                        description="Mood and material inspiration"
+                        badge="Optional"
                         files={styleFiles}
                         onChange={setStyleFiles}
                         multiple
