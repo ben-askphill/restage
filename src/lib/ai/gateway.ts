@@ -28,5 +28,5 @@ export function getDesignerModel() {
 }
 
 export function getImageModel() {
-  return getGateway()(DEFAULT_IMAGE_MODEL);
+  return getGateway().imageModel(DEFAULT_IMAGE_MODEL);
 }

@@ -1,7 +1,8 @@
-import { generateText } from "ai";
+import { generateImage } from "ai";
 import { getImageModel } from "./gateway";
 import { toFilePart, type ImageInput } from "./images";
 import { uploadRender } from "@/lib/blob";
+import { DEFAULT_IMAGE_QUALITY, DEFAULT_IMAGE_SIZE } from "@/lib/env";
 
 export type RenderInput = {
   instruction: string;
@@ -33,80 +34,25 @@ type GeneratedImageFile = {
   uint8Array: Uint8Array;
 };
 
-function looksLikeImage(file: GeneratedImageFile): boolean {
-  if (file.mediaType?.startsWith("image/") || file.mediaType === "image") {
-    return true;
-  }
-  const bytes = file.uint8Array;
-  if (!bytes || bytes.byteLength < 32) return false;
-  return (
-    (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e) ||
-    (bytes[0] === 0xff && bytes[1] === 0xd8) ||
-    (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46)
-  );
-}
-
-function extractImageFiles(result: {
-  files: GeneratedImageFile[];
-  content: Array<{ type: string; file?: GeneratedImageFile }>;
-}): GeneratedImageFile[] {
-  const fromFiles = result.files.filter(looksLikeImage);
-  if (fromFiles.length > 0) return fromFiles;
-
-  return result.content
-    .flatMap((part) => (part.file ? [part.file] : []))
-    .filter(looksLikeImage);
-}
-
-function imageFailureDetail(result: { finishReason?: string; text?: string }) {
-  const text = result.text?.trim().replace(/\s+/g, " ").slice(0, 280);
-  return [result.finishReason, text].filter(Boolean).join(" — ");
-}
-
 async function generateRoomImage(
   content: PromptPart[],
 ): Promise<GeneratedImageFile> {
-  const result = await generateText({
+  const images = content
+    .filter((part) => part.type === "file")
+    .map((part) => part.data);
+  const text = content
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("\n\n");
+
+  const { image } = await generateImage({
     model: getImageModel(),
-    messages: [{ role: "user", content }],
-    providerOptions: {
-      google: {
-        responseModalities: ["TEXT", "IMAGE"],
-      },
-    },
+    prompt: { images, text },
+    size: DEFAULT_IMAGE_SIZE as `${number}x${number}`,
+    providerOptions: { openai: { quality: DEFAULT_IMAGE_QUALITY } },
   });
 
-  let images = extractImageFiles(result);
-  if (images.length === 0) {
-    const retryContent: PromptPart[] = [
-      {
-        type: "text",
-        text: "Return one photorealistic photograph. Do not reply with text.",
-      },
-      ...content.filter((part) => part.type === "file"),
-    ];
-    const retry = await generateText({
-      model: getImageModel(),
-      messages: [{ role: "user", content: retryContent }],
-      providerOptions: {
-        google: {
-          responseModalities: ["IMAGE"],
-        },
-      },
-    });
-    images = extractImageFiles(retry);
-    if (images.length === 0) {
-      const detail =
-        imageFailureDetail(retry) || imageFailureDetail(result);
-      throw new Error(
-        detail
-          ? `Image model did not return an image: ${detail}`
-          : "Image model did not return an image. Check IMAGE_MODEL configuration.",
-      );
-    }
-  }
-
-  return images[0];
+  return { mediaType: image.mediaType, uint8Array: image.uint8Array };
 }
 
 export async function renderRoom(input: RenderInput): Promise<RenderOutput> {

@@ -27,3 +27,9 @@ export const DEFAULT_DESIGNER_MODEL =
 
 export const DEFAULT_IMAGE_MODEL =
   process.env.IMAGE_MODEL ?? "google/gemini-2.5-flash-image";
+
+// Output resolution. gpt-image accepts 1024x1024, 1536x1024, 1024x1536, or auto.
+export const DEFAULT_IMAGE_SIZE = process.env.IMAGE_SIZE ?? "1536x1024";
+
+// Rendering quality: low | medium | high | auto.
+export const DEFAULT_IMAGE_QUALITY = process.env.IMAGE_QUALITY ?? "high";
