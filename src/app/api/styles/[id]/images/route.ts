@@ -50,6 +50,19 @@ export async function POST(request: Request, { params }: Context) {
       return apiError("At least one image is required", 400);
     }
 
+    for (const file of files) {
+      if (isHeicLike(file)) {
+        return apiError(
+          "HEIC photos aren't supported on the server. Convert to JPEG or PNG and try again.",
+          400,
+        );
+      }
+      const type = file.type.toLowerCase();
+      if (type && !type.startsWith("image/")) {
+        return apiError(`"${file.name}" is not an image.`, 400);
+      }
+    }
+
     const images = await Promise.all(files.map(fileToImageInput));
     const stream = isTruthy(form.get("stream"));
 
