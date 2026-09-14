@@ -59,6 +59,8 @@ async function putRaw(
     access: "private",
     contentType,
     addRandomSuffix: false,
+    // style.json is rewritten on every image add / profile update
+    allowOverwrite: true,
   });
   return blob.pathname;
 }
