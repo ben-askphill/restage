@@ -9,7 +9,8 @@ import {
   styleManifestPath,
   uploadStyleImage,
 } from "@/lib/blob";
-import { dataUrlToImageInput, type ImageInput } from "./images";
+import { hasAiGateway } from "@/lib/env";
+import { type ImageInput } from "./images";
 import { analyzeStyleImages, computeStyleSignature } from "./style-profile";
 import type {
   StyleForClient,
@@ -92,19 +93,18 @@ export async function regenerateIfStale(
 
 export async function addImages(
   id: string,
-  dataUrls: string[],
+  images: ImageInput[],
   send?: (status: string) => void,
-): Promise<StyleManifest> {
+): Promise<{ manifest: StyleManifest; profileError?: string }> {
   const manifest = await loadManifest(id);
   if (!manifest) {
     throw new Error("Style not found");
   }
 
-  send?.(`Uploading ${dataUrls.length} image${dataUrls.length === 1 ? "" : "s"}…`);
+  send?.(`Uploading ${images.length} image${images.length === 1 ? "" : "s"}…`);
   const addedAt = new Date().toISOString();
   const uploaded = await Promise.all(
-    dataUrls.map(async (dataUrl) => {
-      const input = dataUrlToImageInput(dataUrl);
+    images.map(async (input) => {
       const { pathname, contentType } = await uploadStyleImage(
         id,
         input.data,
@@ -114,12 +114,32 @@ export async function addImages(
     }),
   );
 
-  const withImages: StyleManifest = {
+  const saved = await saveManifest({
     ...manifest,
     images: [...manifest.images, ...uploaded],
-  };
+  });
 
-  return regenerateIfStale(withImages, send);
+  if (!hasAiGateway()) {
+    return {
+      manifest: saved,
+      profileError:
+        "Images saved. Style profile will be derived once AI is configured.",
+    };
+  }
+
+  try {
+    const updated = await regenerateIfStale(saved, send);
+    return { manifest: updated };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Style profile could not be derived";
+    return {
+      manifest: saved,
+      profileError: `Images saved, but the style profile could not be updated. ${message}`,
+    };
+  }
 }
 
 export function toClient(manifest: StyleManifest): StyleForClient {

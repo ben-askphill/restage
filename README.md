@@ -11,6 +11,7 @@
 - Design rationale and shopping list with retailer search terms
 - In-place refinement ("warmer", "cheaper", etc.)
 - Optional quality gate with one auto-retry
+- Saved **My Styles** folders (inspiration images + derived profile)
 
 ## Tech stack
 
@@ -86,8 +87,15 @@ Set the environment variables in your Vercel project settings. API routes use th
 | `POST /api/render` | Design Brief, room photo, style refs | Render Blob URL |
 | `POST /api/shopping-list` | Design Brief, render URL | Shopping List JSON |
 | `POST /api/refine` | Current render, brief, instruction | Updated render |
+| `GET /api/styles` | — | Saved style folder summaries |
+| `POST /api/styles` | `{ name }` JSON | Create an empty style folder |
+| `POST /api/styles/[id]/images` | `multipart/form-data` field `images` (files) | Append inspiration images; profile derivation is best-effort |
 
-All routes support `stream: true` for SSE progress updates.
+All JSON AI routes support `stream: true` for SSE progress updates. Style image uploads send the same flag as a form field.
+
+### My Styles uploads
+
+The manager resizes photos in the browser (max 2048px JPEG at ~0.85 quality) and uploads them as **multipart files**, not base64 JSON. That keeps phone photos under Vercel’s serverless request body limit. Images are stored on private Blob at `uploads/style/{id}/…` and served through `/api/blob`. A missing AI key does not block storing images — the derived profile stays empty until the gateway is configured.
 
 ## Models
 
