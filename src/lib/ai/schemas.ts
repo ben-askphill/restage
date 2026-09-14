@@ -18,7 +18,31 @@ const windowDoorSchema = z.object({
   keep: z.boolean(),
 });
 
-export const designBriefSchema = z.object({
+export const existingFurnitureItemSchema = z.object({
+  item: z.string(),
+  keep: z.boolean(),
+  note: z.string(),
+});
+
+export type ExistingFurnitureItem = z.infer<typeof existingFurnitureItemSchema>;
+
+export const constraintsFromUserSchema = z.object({
+  style: z.string(),
+  budgetTier: budgetTierSchema,
+  region: z.string(),
+  keepItems: z.array(z.string()),
+  function: z.string(),
+});
+
+export const designStrategySchema = z.object({
+  focalPoint: z.string(),
+  layoutConcept: z.string(),
+  palette: z.array(z.string()),
+  materials: z.array(z.string()),
+  reasoning: z.string(),
+});
+
+export const roomInventorySchema = z.object({
   roomType: z.string(),
   cameraAngle: z.string(),
   aspectRatio: z.string(),
@@ -50,27 +74,14 @@ export const designBriefSchema = z.object({
     confidence: z.enum(["high", "medium", "low"]),
     referenceUsed: z.string(),
   }),
-  existingFurniture: z.array(
-    z.object({
-      item: z.string(),
-      keep: z.boolean(),
-      note: z.string(),
-    }),
-  ),
-  constraintsFromUser: z.object({
-    style: z.string(),
-    budgetTier: budgetTierSchema,
-    region: z.string(),
-    keepItems: z.array(z.string()),
-    function: z.string(),
-  }),
-  designStrategy: z.object({
-    focalPoint: z.string(),
-    layoutConcept: z.string(),
-    palette: z.array(z.string()),
-    materials: z.array(z.string()),
-    reasoning: z.string(),
-  }),
+  existingFurniture: z.array(existingFurnitureItemSchema),
+  constraintsFromUser: constraintsFromUserSchema,
+});
+
+export type RoomInventory = z.infer<typeof roomInventorySchema>;
+
+export const designBriefSchema = roomInventorySchema.extend({
+  designStrategy: designStrategySchema,
 });
 
 export type DesignBrief = z.infer<typeof designBriefSchema>;

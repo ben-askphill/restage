@@ -44,7 +44,7 @@ cp .env.example .env.local
 |----------|-------------|---------|
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway API key (local dev) | — |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob read/write token | — |
-| `DESIGNER_MODEL` | Vision + structured output LLM | `anthropic/claude-sonnet-5` |
+| `DESIGNER_MODEL` | Vision + structured output LLM | `deepseek/deepseek-v4-flash-vision-exp` |
 | `IMAGE_MODEL` | Image generation model | `google/gemini-2.5-flash-image` |
 
 ### 4. Run locally
@@ -93,7 +93,7 @@ All routes support `stream: true` for SSE progress updates.
 
 Verified against [Vercel AI Gateway docs](https://vercel.com/docs/ai-gateway):
 
-- **Designer:** `anthropic/claude-sonnet-5` — vision + `generateObject` for structured output
+- **Designer:** `deepseek/deepseek-v4-flash-vision-exp` — vision + `generateObject` for structured output
 - **Image:** `google/gemini-2.5-flash-image` — multimodal in, image out via `generateText` → `result.files[].uint8Array`
 
 Swap models via environment variables without code changes.

@@ -23,7 +23,7 @@ export function hasBlob(): boolean {
 }
 
 export const DEFAULT_DESIGNER_MODEL =
-  process.env.DESIGNER_MODEL ?? "anthropic/claude-sonnet-5";
+  process.env.DESIGNER_MODEL ?? "deepseek/deepseek-v4-flash-vision-exp";
 
 export const DEFAULT_IMAGE_MODEL =
   process.env.IMAGE_MODEL ?? "google/gemini-2.5-flash-image";

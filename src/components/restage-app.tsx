@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { UploadZone } from "@/components/upload-zone";
 import { BriefForm } from "@/components/brief-form";
+import { KeepPicker } from "@/components/keep-picker";
 import {
   ProgressStages,
   type StageId,
@@ -15,8 +16,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { callApi, fileToDataUrl } from "@/lib/client-api";
-import type { DesignBrief, ShoppingList, UserBriefInput } from "@/lib/ai/schemas";
-import { Loader2, Sparkles } from "lucide-react";
+import type {
+  DesignBrief,
+  RoomInventory,
+  ShoppingList,
+  UserBriefInput,
+} from "@/lib/ai/schemas";
+import { Loader2, ScanSearch, Sparkles } from "lucide-react";
 
 type RenderResult = { imageUrl: string; mediaType: string };
 
@@ -46,11 +52,13 @@ export function RestageApp() {
   const [brief, setBrief] = useState<UserBriefInput>(defaultBrief);
   const [qualityGate, setQualityGate] = useState(true);
 
+  const [analyzing, setAnalyzing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [currentStage, setCurrentStage] = useState<StageId | null>(null);
   const [completedStages, setCompletedStages] = useState<StageId[]>([]);
   const [statusText, setStatusText] = useState("");
 
+  const [inventory, setInventory] = useState<RoomInventory | null>(null);
   const [designBrief, setDesignBrief] = useState<DesignBrief | null>(null);
   const [renderResult, setRenderResult] = useState<RenderResult | null>(null);
   const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
@@ -58,21 +66,32 @@ export function RestageApp() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setBrief((b) => ({ ...b, region: getDefaultRegion() }));
+    setBrief((current) => ({ ...current, region: getDefaultRegion() }));
   }, []);
 
-  const detectedItems =
-    designBrief?.existingFurniture
-      .filter((f) => f.keep)
-      .map((f) => f.item) ?? [];
+  const busy = analyzing || generating;
+  const canAnalyze = roomFiles.length > 0 && brief.function.trim().length > 0;
+  const canGenerate = inventory !== null && roomDataUrl !== null;
+  const hasResults = designBrief && renderResult && roomDataUrl;
+  const showKeepStep = inventory !== null && !hasResults && !generating;
 
-  const canGenerate = roomFiles.length > 0 && brief.function.trim().length > 0;
+  const resetFromPhotoChange = (files: File[]) => {
+    setRoomFiles(files);
+    setInventory(null);
+    setDesignBrief(null);
+    setRenderResult(null);
+    setShoppingList(null);
+    setCompletedStages([]);
+    setRoomDataUrl(null);
+    setBrief((current) => ({ ...current, keepItems: [] }));
+  };
 
-  const handleGenerate = useCallback(async () => {
-    if (!canGenerate) return;
+  const handleAnalyze = useCallback(async () => {
+    if (!canAnalyze) return;
 
-    setGenerating(true);
+    setAnalyzing(true);
     setError(null);
+    setInventory(null);
     setDesignBrief(null);
     setRenderResult(null);
     setShoppingList(null);
@@ -81,33 +100,74 @@ export function RestageApp() {
 
     try {
       const roomImages = await Promise.all(roomFiles.map(fileToDataUrl));
-      const styleRefs = await Promise.all(styleFiles.map(fileToDataUrl));
       const floorPlan = floorPlanFile[0]
         ? await fileToDataUrl(floorPlanFile[0])
         : undefined;
 
       setRoomDataUrl(roomImages[0]);
-
       setCurrentStage("analyze");
-      const analyzed = await callApi<DesignBrief>(
+      const analyzed = await callApi<RoomInventory>(
         "/api/analyze",
         { roomImages, floorPlan, userBrief: brief },
         setStatusText,
       );
-      setDesignBrief(analyzed);
+      setInventory(analyzed);
+      setBrief((current) => ({ ...current, keepItems: [] }));
       setCompletedStages(["analyze"]);
+      setCurrentStage(null);
+      setStatusText("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Analysis failed");
+      setCurrentStage(null);
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [canAnalyze, roomFiles, floorPlanFile, brief]);
+
+  const handleGenerate = useCallback(async () => {
+    if (!canGenerate || !inventory || !roomDataUrl) return;
+
+    setGenerating(true);
+    setError(null);
+    setDesignBrief(null);
+    setRenderResult(null);
+    setShoppingList(null);
+    setCompletedStages(["analyze"]);
+    setStatusText("");
+
+    try {
+      const styleRefs = await Promise.all(styleFiles.map(fileToDataUrl));
 
       setCurrentStage("design");
-      setStatusText("Design strategy assembled from room analysis…");
-      await new Promise((r) => setTimeout(r, 600));
+      const planned = await callApi<DesignBrief>(
+        "/api/plan",
+        {
+          inventory: {
+            ...inventory,
+            roomType: brief.roomType,
+            constraintsFromUser: {
+              ...inventory.constraintsFromUser,
+              style: brief.style,
+              budgetTier: brief.budgetTier,
+              region: brief.region,
+              function: brief.function,
+              keepItems: brief.keepItems,
+            },
+          },
+          keepItems: brief.keepItems,
+          roomImage: roomDataUrl,
+        },
+        setStatusText,
+      );
+      setDesignBrief(planned);
       setCompletedStages(["analyze", "design"]);
 
       setCurrentStage("render");
       const rendered = await callApi<RenderResult>(
         "/api/render",
         {
-          designBrief: analyzed,
-          roomImage: roomImages[0],
+          designBrief: planned,
+          roomImage: roomDataUrl,
           styleReferences: styleRefs,
           qualityGate,
         },
@@ -119,7 +179,7 @@ export function RestageApp() {
       setCurrentStage("shop");
       const list = await callApi<ShoppingList>(
         "/api/shopping-list",
-        { designBrief: analyzed, renderUrl: rendered.imageUrl },
+        { designBrief: planned, renderUrl: rendered.imageUrl },
         setStatusText,
       );
       setShoppingList(list);
@@ -132,7 +192,14 @@ export function RestageApp() {
     } finally {
       setGenerating(false);
     }
-  }, [canGenerate, roomFiles, styleFiles, floorPlanFile, brief, qualityGate]);
+  }, [
+    canGenerate,
+    inventory,
+    roomDataUrl,
+    styleFiles,
+    brief,
+    qualityGate,
+  ]);
 
   const handleRefine = useCallback(
     async (instruction: string) => {
@@ -172,8 +239,6 @@ export function RestageApp() {
     [designBrief, renderResult, roomDataUrl, styleFiles, qualityGate],
   );
 
-  const hasResults = designBrief && renderResult && roomDataUrl;
-
   return (
     <div className="min-h-screen">
       <header className="border-b">
@@ -203,7 +268,7 @@ export function RestageApp() {
                   label="Room photo"
                   description="Required — the room to redesign"
                   files={roomFiles}
-                  onChange={setRoomFiles}
+                  onChange={resetFromPhotoChange}
                 />
                 <UploadZone
                   label="Style references"
@@ -229,47 +294,33 @@ export function RestageApp() {
                   Tell us how you use the room and what direction you want.
                 </p>
               </div>
-              <BriefForm
-                value={brief}
-                onChange={setBrief}
-                detectedItems={detectedItems}
-              />
+              <BriefForm value={brief} onChange={setBrief} />
             </section>
 
-            <div className="flex items-center gap-3">
-              <Checkbox
-                id="qualityGate"
-                checked={qualityGate}
-                onCheckedChange={(v) => setQualityGate(v === true)}
-              />
-              <Label htmlFor="qualityGate" className="text-sm">
-                Auto quality check (recommended) — critiques render and refines
-                once if needed
-              </Label>
-            </div>
-
-            <Button
-              size="lg"
-              onClick={handleGenerate}
-              disabled={!canGenerate || generating}
-              className="w-full sm:w-auto"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Generating…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 size-4" />
-                  Generate redesign
-                </>
-              )}
-            </Button>
+            {!inventory && (
+              <Button
+                size="lg"
+                onClick={handleAnalyze}
+                disabled={!canAnalyze || busy}
+                className="w-full sm:w-auto"
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Analyzing…
+                  </>
+                ) : (
+                  <>
+                    <ScanSearch className="mr-2 size-4" />
+                    Analyze room
+                  </>
+                )}
+              </Button>
+            )}
           </>
         )}
 
-        {(generating || hasResults) && (
+        {(analyzing || generating || hasResults) && (
           <section className="space-y-6">
             <ProgressStages
               currentStage={currentStage}
@@ -291,8 +342,74 @@ export function RestageApp() {
           </div>
         )}
 
+        {showKeepStep && inventory && (
+          <section className="space-y-6">
+            <div>
+              <h2 className="text-lg font-medium">What should stay?</h2>
+              <p className="text-sm text-muted-foreground">
+                Check anything that should remain as it is. You can also type
+                an item that was missed.
+              </p>
+            </div>
+            <KeepPicker
+              furniture={inventory.existingFurniture}
+              keepItems={brief.keepItems}
+              onChange={(keepItems) =>
+                setBrief((current) => ({ ...current, keepItems }))
+              }
+              disabled={busy}
+            />
+
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="qualityGate"
+                checked={qualityGate}
+                onCheckedChange={(value) => setQualityGate(value === true)}
+              />
+              <Label htmlFor="qualityGate" className="text-sm">
+                Auto quality check (recommended) — critiques render and refines
+                once if needed
+              </Label>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                onClick={handleGenerate}
+                disabled={!canGenerate || busy}
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Generating…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 size-4" />
+                    Generate redesign
+                  </>
+                )}
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleAnalyze}
+                disabled={!canAnalyze || busy}
+              >
+                Re-analyze
+              </Button>
+            </div>
+          </section>
+        )}
+
         {hasResults && (
           <section className="space-y-10">
+            {designBrief.constraintsFromUser.keepItems.length > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Kept: {designBrief.constraintsFromUser.keepItems.join(" · ")}
+              </p>
+            )}
+
             <BeforeAfterSlider
               beforeSrc={roomDataUrl}
               afterSrc={renderResult.imageUrl}
@@ -342,10 +459,10 @@ export function RestageApp() {
                   setDesignBrief(null);
                   setRenderResult(null);
                   setShoppingList(null);
-                  setCompletedStages([]);
+                  setCompletedStages(["analyze"]);
                 }}
               >
-                Start over
+                Change keep list
               </Button>
             </div>
           </section>

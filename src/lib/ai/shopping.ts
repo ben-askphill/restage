@@ -38,6 +38,7 @@ Rules:
 - Give retailer names + a search query the user can run. Do NOT fabricate product URLs or claim live prices/stock.
 - Present prices as estimates in local currency.
 - Match approximate dimensions to the scale used in the render.
+- Do NOT include keep-list items. The user is keeping: ${brief.constraintsFromUser.keepItems.join(", ") || "nothing specified"}.
 - Include a notes field explaining prices are estimates.`,
           },
           {

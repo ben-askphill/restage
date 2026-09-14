@@ -36,8 +36,8 @@ Check:
 - Any blocked radiator/outlet/door swing?
 - Scale plausible vs the door/ceiling?
 - Lighting consistent with the original?
+- Keep-list items intact, in place, and recognizably the same object from the original photo? If a keep-list sofa/couch/sectional was replaced, this is a critical fail.
 - Style-ref mood present without copying layout?
-- Keep-list items intact?
 - Any AI-staging clichés or material honesty issues?
 
 Design Brief:

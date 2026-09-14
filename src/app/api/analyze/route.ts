@@ -32,13 +32,13 @@ export async function POST(request: Request) {
 
     if (stream) {
       return streamStatus(async (send) => {
-        send("Analyzing room architecture and lighting…");
+        send("Listing furniture and architecture…");
         const brief = await analyzeRoom({
           roomImages: roomImageInputs,
           floorPlan: floorPlanInput,
           userBrief: parsedBrief.data,
         });
-        send("Design brief complete");
+        send("Room inventory ready");
         return brief;
       });
     }
