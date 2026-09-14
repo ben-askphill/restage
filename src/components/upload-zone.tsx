@@ -1,22 +1,29 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { X, Upload, ImageIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { X, Camera, Images, PencilRuler, FileImage } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type UploadZoneProps = {
   label: string;
   description: string;
+  badge: "Required" | "Optional";
   files: File[];
   onChange: (files: File[]) => void;
   multiple?: boolean;
   accept?: string;
 };
 
+const ICONS: Record<string, typeof Camera> = {
+  "Room photo": Camera,
+  "Style references": Images,
+  "Floor plan": PencilRuler,
+};
+
 export function UploadZone({
   label,
   description,
+  badge,
   files,
   onChange,
   multiple = false,
@@ -24,6 +31,7 @@ export function UploadZone({
 }: UploadZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const Icon = ICONS[label] ?? Camera;
 
   const addFiles = useCallback(
     (incoming: FileList | File[]) => {
@@ -51,11 +59,6 @@ export function UploadZone({
 
   return (
     <div className="space-y-3">
-      <div>
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -65,16 +68,30 @@ export function UploadZone({
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
         className={cn(
-          "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 transition-colors",
-          dragging
-            ? "border-accent bg-accent/5"
-            : "border-border hover:border-accent/50 hover:bg-muted/30",
+          "flex cursor-pointer flex-col items-center gap-3 rounded-3xl bg-muted px-6 py-10 text-center transition-colors",
+          dragging ? "bg-tint" : "hover:bg-[#ece8e2]",
         )}
       >
-        <Upload className="mb-2 size-5 text-muted-foreground" />
-        <p className="text-xs text-muted-foreground">
-          Drag & drop or click to upload
-        </p>
+        <div className="flex size-[60px] items-center justify-center rounded-full bg-background">
+          <Icon className="size-[26px] text-primary" />
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[17px] font-bold">{label}</span>
+          <span className="text-sm text-muted-foreground">{description}</span>
+        </div>
+        <span
+          className={cn(
+            "rounded-full px-3 py-1.5 text-xs font-bold",
+            badge === "Required"
+              ? "bg-tint text-tint-foreground"
+              : "bg-background text-muted-foreground",
+          )}
+        >
+          {badge}
+        </span>
+        <span className="text-[13px] text-faint">
+          Drag &amp; drop or click to upload
+        </span>
         <input
           ref={inputRef}
           type="file"
@@ -93,7 +110,7 @@ export function UploadZone({
           {files.map((file, index) => (
             <div
               key={`${file.name}-${index}`}
-              className="group relative size-20 overflow-hidden rounded-md border bg-muted"
+              className="group relative size-20 overflow-hidden rounded-2xl bg-muted"
             >
               {file.type.startsWith("image/") ? (
                 <img
@@ -103,21 +120,19 @@ export function UploadZone({
                 />
               ) : (
                 <div className="flex size-full items-center justify-center">
-                  <ImageIcon className="size-6 text-muted-foreground" />
+                  <FileImage className="size-6 text-muted-foreground" />
                 </div>
               )}
-              <Button
+              <button
                 type="button"
-                variant="secondary"
-                size="icon"
-                className="absolute right-1 top-1 size-6 opacity-0 transition-opacity group-hover:opacity-100"
+                className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-background opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeFile(index);
                 }}
               >
                 <X className="size-3" />
-              </Button>
+              </button>
             </div>
           ))}
         </div>

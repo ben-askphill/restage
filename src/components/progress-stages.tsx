@@ -25,35 +25,35 @@ export function ProgressStages({
 }: ProgressStagesProps) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
+      <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
         {STAGES.map((stage, index) => {
           const isComplete = completedStages.includes(stage.id);
           const isCurrent = currentStage === stage.id;
           const isPending = !isComplete && !isCurrent;
 
           return (
-            <div key={stage.id} className="flex items-center gap-2">
+            <div key={stage.id} className="flex items-center gap-2.5">
               <div
                 className={cn(
-                  "flex size-7 items-center justify-center rounded-full border text-xs",
-                  isComplete && "border-accent bg-accent text-accent-foreground",
-                  isCurrent && "border-accent text-accent",
-                  isPending && "border-muted-foreground/30 text-muted-foreground",
+                  "flex size-8 items-center justify-center rounded-full text-[13px] font-bold",
+                  isComplete && "bg-primary text-primary-foreground",
+                  isCurrent && "border-2 border-primary text-primary",
+                  isPending && "border-2 border-[#ddd5cc] text-faint",
                 )}
               >
                 {isComplete ? (
-                  <Check className="size-3.5" />
+                  <Check className="size-[15px]" strokeWidth={3} />
                 ) : isCurrent ? (
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <span>{index + 1}</span>
                 )}
               </div>
               <span
                 className={cn(
-                  "text-sm",
-                  isCurrent && "font-medium",
-                  isPending && "text-muted-foreground",
+                  "text-[15px]",
+                  isComplete || isCurrent ? "font-bold" : "font-medium",
+                  isPending && "text-faint",
                 )}
               >
                 {stage.label}
@@ -63,7 +63,9 @@ export function ProgressStages({
         })}
       </div>
       {statusText && (
-        <p className="text-sm text-muted-foreground animate-pulse">{statusText}</p>
+        <p className="animate-pulse text-center text-sm font-medium text-muted-foreground">
+          {statusText}
+        </p>
       )}
     </div>
   );
