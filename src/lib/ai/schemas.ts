@@ -104,6 +104,51 @@ export const shoppingListSchema = z.object({
 
 export type ShoppingList = z.infer<typeof shoppingListSchema>;
 
+export const styleProfileSchema = z.object({
+  summary: z.string(),
+  palette: z.array(z.string()),
+  materials: z.array(z.string()),
+  mood: z.string(),
+  finishLevel: budgetTierSchema,
+  keywords: z.array(z.string()),
+});
+
+export type StyleProfile = z.infer<typeof styleProfileSchema>;
+
+export const styleImageSchema = z.object({
+  pathname: z.string(),
+  contentType: z.string(),
+  addedAt: z.string(),
+});
+
+export type StyleImage = z.infer<typeof styleImageSchema>;
+
+export const styleManifestSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  images: z.array(styleImageSchema),
+  profile: styleProfileSchema.nullable(),
+  signature: z.string().nullable(),
+});
+
+export type StyleManifest = z.infer<typeof styleManifestSchema>;
+
+/** A style folder as sent to the client: image pathnames replaced by proxy URLs. */
+export type StyleForClient = Omit<StyleManifest, "images"> & {
+  images: Array<{ url: string; contentType: string; addedAt: string }>;
+};
+
+export type StyleSummary = {
+  id: string;
+  name: string;
+  updatedAt: string;
+  imageCount: number;
+  thumbnailUrl: string | null;
+  summary: string | null;
+};
+
 export const critiqueResultSchema = z.object({
   passed: z.boolean(),
   issues: z.array(z.string()),

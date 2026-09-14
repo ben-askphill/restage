@@ -1,7 +1,9 @@
 import { assembleImageInstruction, assembleRefineInstruction } from "@/lib/ai/prompt";
 import { renderRoom, toClientRenderResult } from "@/lib/ai/render";
 import { critiqueRender } from "@/lib/ai/critique";
-import { dataUrlToImageInput } from "@/lib/ai/images";
+import { dataUrlToImageInput, type ImageInput } from "@/lib/ai/images";
+import { resolveStyle } from "@/lib/ai/styles";
+import { styleProfileToText } from "@/lib/ai/style-profile";
 import { designBriefSchema } from "@/lib/ai/schemas";
 import {
   apiError,
@@ -21,8 +23,14 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { designBrief, roomImage, styleReferences = [], qualityGate = true, stream } =
-      body;
+    const {
+      designBrief,
+      roomImage,
+      styleReferences = [],
+      styleId,
+      qualityGate = true,
+      stream,
+    } = body;
 
     const parsedBrief = designBriefSchema.safeParse(designBrief);
     if (!parsedBrief.success) {
@@ -34,10 +42,27 @@ export async function POST(request: Request) {
     }
 
     const roomImageInput = dataUrlToImageInput(roomImage);
-    const styleRefInputs = (styleReferences as string[]).map((url) =>
-      dataUrlToImageInput(url),
+
+    // A saved style (styleId) supplies both its images and its text profile;
+    // otherwise fall back to one-off data-URL references from the client.
+    let styleRefInputs: ImageInput[];
+    let styleProfileText: string | undefined;
+    if (typeof styleId === "string" && styleId) {
+      const resolved = await resolveStyle(styleId);
+      styleRefInputs = resolved.images;
+      styleProfileText = resolved.profile
+        ? styleProfileToText(resolved.profile)
+        : undefined;
+    } else {
+      styleRefInputs = (styleReferences as string[]).map((url) =>
+        dataUrlToImageInput(url),
+      );
+    }
+
+    const instruction = assembleImageInstruction(
+      parsedBrief.data,
+      styleProfileText,
     );
-    const instruction = assembleImageInstruction(parsedBrief.data);
 
     const runRender = async (send?: (status: string) => void) => {
       send?.("Assembling image instruction…");

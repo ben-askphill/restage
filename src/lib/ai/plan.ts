@@ -13,6 +13,8 @@ export type PlanInput = {
   inventory: RoomInventory;
   keepItems: string[];
   roomImage: ImageInput;
+  /** Text profile derived from a saved "My Styles" folder, if one was picked. */
+  styleProfile?: string;
 };
 
 export async function planDesign(input: PlanInput): Promise<DesignBrief> {
@@ -48,7 +50,14 @@ ${JSON.stringify(inventory, null, 2)}
 Style: ${inventory.constraintsFromUser.style}
 Budget: ${inventory.constraintsFromUser.budgetTier}
 Region: ${inventory.constraintsFromUser.region}
-Use: ${inventory.constraintsFromUser.function}`,
+Use: ${inventory.constraintsFromUser.function}${
+              input.styleProfile
+                ? `
+
+Saved style profile (from the user's inspiration folder — treat as the authoritative direction for palette, materials, mood and finish):
+${input.styleProfile}`
+                : ""
+            }`,
           },
           toFilePart(input.roomImage),
         ],

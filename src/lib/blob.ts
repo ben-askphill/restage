@@ -1,7 +1,15 @@
-import { get, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import { hasBlob } from "@/lib/env";
 
 const ALLOWED_PREFIXES = ["renders/", "uploads/"] as const;
+
+export function styleManifestPath(id: string): string {
+  return `styles/${id}/style.json`;
+}
+
+export function styleImagePrefix(id: string): string {
+  return `uploads/style/${id}/`;
+}
 
 export function isAllowedBlobPathname(pathname: string): boolean {
   const normalized = pathname.replace(/^\//, "");
@@ -31,24 +39,74 @@ export function extractBlobPathname(url: string): string | null {
   return null;
 }
 
-async function putPrivateBlob(
-  pathname: string,
-  data: Uint8Array,
-  contentType: string,
-): Promise<string> {
+function assertBlobConfigured() {
   if (!hasBlob()) {
     throw new Error(
       "BLOB_READ_WRITE_TOKEN is not configured. Add it to your environment to store images.",
     );
   }
+}
 
-  const blob = await put(pathname, Buffer.from(data), {
+async function putRaw(
+  pathname: string,
+  data: string | Uint8Array,
+  contentType: string,
+): Promise<string> {
+  assertBlobConfigured();
+  const body = typeof data === "string" ? data : Buffer.from(data);
+  const blob = await put(pathname, body, {
     access: "private",
     contentType,
     addRandomSuffix: false,
   });
+  return blob.pathname;
+}
 
-  return blobDisplayUrl(blob.pathname);
+async function putPrivateBlob(
+  pathname: string,
+  data: Uint8Array,
+  contentType: string,
+): Promise<string> {
+  const stored = await putRaw(pathname, data, contentType);
+  return blobDisplayUrl(stored);
+}
+
+export async function putJsonBlob<T>(
+  pathname: string,
+  value: T,
+): Promise<void> {
+  await putRaw(pathname, JSON.stringify(value), "application/json");
+}
+
+export async function getJsonBlob<T>(pathname: string): Promise<T | null> {
+  assertBlobConfigured();
+  try {
+    const result = await get(pathname.replace(/^\//, ""), {
+      access: "private",
+      useCache: false,
+    });
+    if (result?.statusCode !== 200) {
+      return null;
+    }
+    const text = await new Response(result.stream).text();
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
+export async function listByPrefix(
+  prefix: string,
+): Promise<{ pathname: string }[]> {
+  assertBlobConfigured();
+  const { blobs } = await list({ prefix });
+  return blobs.map((blob) => ({ pathname: blob.pathname }));
+}
+
+export async function deleteBlobs(pathnames: string[]): Promise<void> {
+  if (pathnames.length === 0) return;
+  assertBlobConfigured();
+  await del(pathnames);
 }
 
 export async function uploadRender(
@@ -68,6 +126,17 @@ export async function uploadUpload(
   const extension = contentType.split("/")[1] ?? "jpg";
   const filename = `uploads/${prefix}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
   return putPrivateBlob(filename, data, contentType);
+}
+
+export async function uploadStyleImage(
+  styleId: string,
+  data: Uint8Array,
+  contentType: string,
+): Promise<{ pathname: string; contentType: string }> {
+  const extension = contentType.split("/")[1] ?? "jpg";
+  const filename = `${styleImagePrefix(styleId)}${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  const pathname = await putRaw(filename, data, contentType);
+  return { pathname, contentType };
 }
 
 export async function downloadPrivateBlob(urlOrPathname: string): Promise<{
