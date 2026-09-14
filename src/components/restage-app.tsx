@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { UploadZone } from "@/components/upload-zone";
+import { StylePicker } from "@/components/style-picker";
 import { BriefForm } from "@/components/brief-form";
 import { KeepPicker } from "@/components/keep-picker";
 import {
@@ -13,14 +14,14 @@ import { ShoppingListView } from "@/components/shopping-list";
 import { RefineBar } from "@/components/refine-bar";
 import { Button } from "@/components/ui/button";
 import { callApi, fileToDataUrl } from "@/lib/client-api";
+import { cn } from "@/lib/utils";
 import type {
   DesignBrief,
   RoomInventory,
   ShoppingList,
   UserBriefInput,
 } from "@/lib/ai/schemas";
-import { Check, Loader2, ScanSearch, Sofa, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Check, ChevronDown, Loader2, ScanSearch, Sofa, Sparkles } from "lucide-react";
 
 type RenderResult = { imageUrl: string; mediaType: string };
 
@@ -46,6 +47,8 @@ const defaultBrief: UserBriefInput = {
 export function RestageApp() {
   const [roomFiles, setRoomFiles] = useState<File[]>([]);
   const [styleFiles, setStyleFiles] = useState<File[]>([]);
+  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
+  const [oneOffOpen, setOneOffOpen] = useState(false);
   const [floorPlanFile, setFloorPlanFile] = useState<File[]>([]);
   const [brief, setBrief] = useState<UserBriefInput>(defaultBrief);
   const [qualityGate, setQualityGate] = useState(true);
@@ -134,7 +137,11 @@ export function RestageApp() {
     setStatusText("");
 
     try {
-      const styleRefs = await Promise.all(styleFiles.map(fileToDataUrl));
+      // A selected saved style is resolved server-side via styleId; only fall
+      // back to one-off data-URL references when no style is chosen.
+      const styleRefs = selectedStyleId
+        ? []
+        : await Promise.all(styleFiles.map(fileToDataUrl));
 
       setCurrentStage("design");
       const planned = await callApi<DesignBrief>(
@@ -154,6 +161,7 @@ export function RestageApp() {
           },
           keepItems: brief.keepItems,
           roomImage: roomDataUrl,
+          styleId: selectedStyleId ?? undefined,
         },
         setStatusText,
       );
@@ -167,6 +175,7 @@ export function RestageApp() {
           designBrief: planned,
           roomImage: roomDataUrl,
           styleReferences: styleRefs,
+          styleId: selectedStyleId ?? undefined,
           qualityGate,
         },
         setStatusText,
@@ -195,6 +204,7 @@ export function RestageApp() {
     inventory,
     roomDataUrl,
     styleFiles,
+    selectedStyleId,
     brief,
     qualityGate,
   ]);
@@ -207,7 +217,9 @@ export function RestageApp() {
       setStatusText("Refining design…");
 
       try {
-        const styleRefs = await Promise.all(styleFiles.map(fileToDataUrl));
+        const styleRefs = selectedStyleId
+          ? []
+          : await Promise.all(styleFiles.map(fileToDataUrl));
         const refined = await callApi<RenderResult>(
           "/api/refine",
           {
@@ -216,6 +228,7 @@ export function RestageApp() {
             currentRenderUrl: renderResult.imageUrl,
             instruction,
             styleReferences: styleRefs,
+            styleId: selectedStyleId ?? undefined,
             qualityGate,
           },
           setStatusText,
@@ -234,7 +247,14 @@ export function RestageApp() {
         setError(err instanceof Error ? err.message : "Refinement failed");
       }
     },
-    [designBrief, renderResult, roomDataUrl, styleFiles, qualityGate],
+    [
+      designBrief,
+      renderResult,
+      roomDataUrl,
+      styleFiles,
+      selectedStyleId,
+      qualityGate,
+    ],
   );
 
   return (
@@ -282,21 +302,13 @@ export function RestageApp() {
                 </p>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-3">
+              <div className="grid gap-5 md:grid-cols-2">
                 <UploadZone
                   label="Room photo"
                   description="The room to redesign"
                   badge="Required"
                   files={roomFiles}
                   onChange={resetFromPhotoChange}
-                />
-                <UploadZone
-                  label="Style references"
-                  description="Mood and material inspiration"
-                  badge="Optional"
-                  files={styleFiles}
-                  onChange={setStyleFiles}
-                  multiple
                 />
                 <UploadZone
                   label="Floor plan"
@@ -306,6 +318,48 @@ export function RestageApp() {
                   onChange={setFloorPlanFile}
                   accept="image/*,.pdf"
                 />
+              </div>
+
+              <div className="space-y-3">
+                <StylePicker
+                  selected={selectedStyleId}
+                  onSelect={setSelectedStyleId}
+                />
+
+                <div className="rounded-lg border border-dashed">
+                  <button
+                    type="button"
+                    onClick={() => setOneOffOpen((open) => !open)}
+                    aria-expanded={oneOffOpen}
+                    className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm text-muted-foreground"
+                  >
+                    <span>Or upload one-off references for this render only</span>
+                    <ChevronDown
+                      className={cn(
+                        "size-4 transition-transform",
+                        oneOffOpen && "rotate-180",
+                      )}
+                    />
+                  </button>
+                  {oneOffOpen && (
+                    <div className="border-t px-4 py-4">
+                      {selectedStyleId && (
+                        <p className="mb-3 text-xs text-muted-foreground">
+                          A saved style is selected — it takes priority. Deselect
+                          it to use these one-off references.
+                        </p>
+                      )}
+                      <UploadZone
+                        label="Style references"
+                        description="Mood and material inspiration"
+                        badge="Optional"
+                        files={styleFiles}
+                        onChange={setStyleFiles}
+                        multiple
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
 

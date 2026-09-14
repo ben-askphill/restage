@@ -1,7 +1,12 @@
 import { assembleRefineInstruction } from "@/lib/ai/prompt";
 import { renderRoom, toClientRenderResult } from "@/lib/ai/render";
 import { critiqueRender } from "@/lib/ai/critique";
-import { dataUrlToImageInput, urlToImageInput } from "@/lib/ai/images";
+import {
+  dataUrlToImageInput,
+  urlToImageInput,
+  type ImageInput,
+} from "@/lib/ai/images";
+import { resolveStyle } from "@/lib/ai/styles";
 import { designBriefSchema } from "@/lib/ai/schemas";
 import {
   apiError,
@@ -27,6 +32,7 @@ export async function POST(request: Request) {
       currentRenderUrl,
       instruction,
       styleReferences = [],
+      styleId,
       qualityGate = true,
       stream,
     } = body;
@@ -45,9 +51,15 @@ export async function POST(request: Request) {
 
     const roomImageInput = dataUrlToImageInput(roomImage);
     const currentRender = await urlToImageInput(currentRenderUrl);
-    const styleRefInputs = (styleReferences as string[]).map((url) =>
-      dataUrlToImageInput(url),
-    );
+
+    let styleRefInputs: ImageInput[];
+    if (typeof styleId === "string" && styleId) {
+      styleRefInputs = (await resolveStyle(styleId)).images;
+    } else {
+      styleRefInputs = (styleReferences as string[]).map((url) =>
+        dataUrlToImageInput(url),
+      );
+    }
     const refineInstruction = assembleRefineInstruction(
       parsedBrief.data,
       instruction,
