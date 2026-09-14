@@ -1,6 +1,7 @@
 import { del, get, list, put } from "@vercel/blob";
 import { hasBlob } from "@/lib/env";
 
+/** Private Blob prefixes the `/api/blob` proxy may serve. Style photos live under `uploads/style/`. */
 const ALLOWED_PREFIXES = ["renders/", "uploads/"] as const;
 
 export function styleManifestPath(id: string): string {

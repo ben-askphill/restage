@@ -11,11 +11,12 @@ import {
 import { UploadZone } from "@/components/upload-zone";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { callApi, fileToDataUrl } from "@/lib/client-api";
+import { callApi } from "@/lib/client-api";
 import {
   deleteStyle as deleteStyleApi,
   fetchStyle,
   fetchStyleSummaries,
+  uploadStyleImages,
 } from "@/lib/styles-client";
 import type { StyleForClient, StyleSummary } from "@/lib/ai/schemas";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
   const [openStyle, setOpenStyle] = useState<StyleForClient | null>(null);
   const [openLoading, setOpenLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -95,6 +97,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
     setOpenId(id);
     setOpenStyle(null);
     setUploadStatus(null);
+    setWarning(null);
     setOpenLoading(true);
     setError(null);
     try {
@@ -111,18 +114,25 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
     async (files: File[]) => {
       if (!openId || files.length === 0) return;
       setError(null);
+      setWarning(null);
       try {
-        const dataUrls = await Promise.all(files.map(fileToDataUrl));
-        const { style } = await callApi<{ style: StyleForClient }>(
-          `/api/styles/${openId}/images`,
-          { images: dataUrls },
+        const { style, warning: profileWarning } = await uploadStyleImages(
+          openId,
+          files,
           setUploadStatus,
         );
         setOpenStyle(style);
+        if (profileWarning) setWarning(profileWarning);
         await refresh();
         onStylesChanged?.();
       } catch (err) {
         setError(errorMessage(err));
+        try {
+          setOpenStyle(await fetchStyle(openId));
+          await refresh();
+        } catch {
+          // Keep the original upload error.
+        }
       } finally {
         setUploadStatus(null);
       }
@@ -191,6 +201,12 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
         </div>
       )}
 
+      {warning && (
+        <div className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground">
+          {warning}
+        </div>
+      )}
+
       {/* Detail view */}
       {openId ? (
         <div className="space-y-5">
@@ -201,6 +217,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
               setOpenId(null);
               setOpenStyle(null);
               setUploadStatus(null);
+              setWarning(null);
             }}
           >
             <ArrowLeft className="size-3.5" />
