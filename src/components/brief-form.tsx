@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,9 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
 import type { UserBriefInput } from "@/lib/ai/schemas";
+import { cn } from "@/lib/utils";
 
 const ROOM_TYPES = [
   "Living room",
@@ -37,49 +35,31 @@ const STYLE_PRESETS = [
   "Contemporary",
 ];
 
+const fieldClass =
+  "h-[52px] w-full rounded-2xl border-transparent bg-muted px-5 text-[15px] font-medium dark:bg-muted";
+
+const labelClass = "text-sm font-bold";
+
 type BriefFormProps = {
   value: UserBriefInput;
   onChange: (value: UserBriefInput) => void;
-  detectedItems?: string[];
 };
 
-export function BriefForm({ value, onChange, detectedItems = [] }: BriefFormProps) {
-  const [keepInput, setKeepInput] = useState("");
-
-  const addKeepItem = (item: string) => {
-    const trimmed = item.trim();
-    if (!trimmed || value.keepItems.includes(trimmed)) return;
-    onChange({ ...value, keepItems: [...value.keepItems, trimmed] });
-    setKeepInput("");
-  };
-
-  const removeKeepItem = (item: string) => {
-    onChange({
-      ...value,
-      keepItems: value.keepItems.filter((k) => k !== item),
-    });
-  };
-
-  const toggleDetectedItem = (item: string) => {
-    if (value.keepItems.includes(item)) {
-      removeKeepItem(item);
-    } else {
-      onChange({ ...value, keepItems: [...value.keepItems, item] });
-    }
-  };
-
+export function BriefForm({ value, onChange }: BriefFormProps) {
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+    <div className="space-y-7">
+      <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="roomType">Room type</Label>
+          <Label htmlFor="roomType" className={labelClass}>
+            Room type
+          </Label>
           <Select
             value={value.roomType}
             onValueChange={(v) => {
               if (v) onChange({ ...value, roomType: v });
             }}
           >
-            <SelectTrigger id="roomType">
+            <SelectTrigger id="roomType" className={fieldClass}>
               <SelectValue placeholder="Select room type" />
             </SelectTrigger>
             <SelectContent>
@@ -93,7 +73,9 @@ export function BriefForm({ value, onChange, detectedItems = [] }: BriefFormProp
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="budget">Budget tier</Label>
+          <Label htmlFor="budget" className={labelClass}>
+            Budget tier
+          </Label>
           <Select
             value={value.budgetTier}
             onValueChange={(v) => {
@@ -105,7 +87,7 @@ export function BriefForm({ value, onChange, detectedItems = [] }: BriefFormProp
               }
             }}
           >
-            <SelectTrigger id="budget">
+            <SelectTrigger id="budget" className={fieldClass}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -117,100 +99,66 @@ export function BriefForm({ value, onChange, detectedItems = [] }: BriefFormProp
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="style">Style direction</Label>
+      <div className="space-y-2.5">
+        <Label htmlFor="style" className={labelClass}>
+          Style direction
+        </Label>
         <Input
           id="style"
           value={value.style}
           onChange={(e) => onChange({ ...value, style: e.target.value })}
           placeholder="e.g. warm Japandi with walnut accents"
+          className={cn(fieldClass, "placeholder:text-faint")}
         />
         <div className="flex flex-wrap gap-2 pt-1">
-          {STYLE_PRESETS.map((preset) => (
-            <Badge
-              key={preset}
-              variant={value.style === preset ? "default" : "outline"}
-              className="cursor-pointer"
-              onClick={() => onChange({ ...value, style: preset })}
-            >
-              {preset}
-            </Badge>
-          ))}
+          {STYLE_PRESETS.map((preset) => {
+            const selected = value.style === preset;
+            return (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => onChange({ ...value, style: preset })}
+                className={cn(
+                  "rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
+                  selected
+                    ? "bg-foreground text-background"
+                    : "bg-muted hover:bg-[#ece8e2]",
+                )}
+              >
+                {preset}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="region">Region</Label>
-        <Input
-          id="region"
-          value={value.region}
-          onChange={(e) => onChange({ ...value, region: e.target.value })}
-          placeholder="e.g. Netherlands, United States"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="function">How is the room used?</Label>
-        <Textarea
-          id="function"
-          value={value.function}
-          onChange={(e) => onChange({ ...value, function: e.target.value })}
-          placeholder="e.g. WFH by day, hosting in the evening"
-          rows={2}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Keep list</Label>
-        <p className="text-xs text-muted-foreground">
-          Items to preserve in the redesign
-        </p>
-        <div className="flex gap-2">
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="region" className={labelClass}>
+            Region
+          </Label>
           <Input
-            value={keepInput}
-            onChange={(e) => setKeepInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addKeepItem(keepInput);
-              }
-            }}
-            placeholder="e.g. the rug, built-in shelves"
+            id="region"
+            value={value.region}
+            onChange={(e) => onChange({ ...value, region: e.target.value })}
+            placeholder="e.g. Netherlands, United States"
+            className={cn(fieldClass, "placeholder:text-faint")}
           />
         </div>
-        {value.keepItems.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {value.keepItems.map((item) => (
-              <Badge key={item} variant="secondary" className="gap-1">
-                {item}
-                <button type="button" onClick={() => removeKeepItem(item)}>
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
-        {detectedItems.length > 0 && (
-          <div className="pt-2">
-            <p className="mb-2 text-xs text-muted-foreground">
-              Detected in room — tap to keep:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {detectedItems.map((item) => (
-                <Badge
-                  key={item}
-                  variant={
-                    value.keepItems.includes(item) ? "default" : "outline"
-                  }
-                  className="cursor-pointer"
-                  onClick={() => toggleDetectedItem(item)}
-                >
-                  {item}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="function" className={labelClass}>
+            How is the room used?
+          </Label>
+          <Textarea
+            id="function"
+            value={value.function}
+            onChange={(e) => onChange({ ...value, function: e.target.value })}
+            placeholder="e.g. WFH by day, hosting in the evening"
+            rows={1}
+            className="min-h-[52px] w-full rounded-2xl border-transparent bg-muted px-5 py-3.5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
+          />
+        </div>
       </div>
     </div>
   );

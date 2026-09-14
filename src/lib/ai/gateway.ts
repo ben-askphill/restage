@@ -1,5 +1,9 @@
 import { createGateway } from "@ai-sdk/gateway";
-import { hasAiGateway } from "@/lib/env";
+import {
+  DEFAULT_DESIGNER_MODEL,
+  DEFAULT_IMAGE_MODEL,
+  hasAiGateway,
+} from "@/lib/env";
 
 let gatewayInstance: ReturnType<typeof createGateway> | null = null;
 
@@ -20,13 +24,9 @@ export function getGateway() {
 }
 
 export function getDesignerModel() {
-  const modelId =
-    process.env.DESIGNER_MODEL ?? "anthropic/claude-sonnet-5";
-  return getGateway()(modelId);
+  return getGateway()(DEFAULT_DESIGNER_MODEL);
 }
 
 export function getImageModel() {
-  const modelId =
-    process.env.IMAGE_MODEL ?? "google/gemini-2.5-flash-image";
-  return getGateway()(modelId);
+  return getGateway()(DEFAULT_IMAGE_MODEL);
 }

@@ -1,5 +1,32 @@
-import { NON_NEGOTIABLE_RULES } from "./constants";
+import { keptFurniture } from "./keep";
 import type { DesignBrief } from "./schemas";
+
+function keepConstraintBlock(brief: DesignBrief): string {
+  const kept = keptFurniture(brief);
+  if (kept.length === 0 && brief.constraintsFromUser.keepItems.length === 0) {
+    return "KEEP LIST: none. Movable furniture may be replaced.";
+  }
+
+  const lines = (
+    kept.length > 0
+      ? kept
+      : brief.constraintsFromUser.keepItems.map((item) => ({
+          item,
+          note: "",
+          keep: true,
+        }))
+  )
+    .map(
+      (piece) =>
+        `- ${piece.item}${piece.note ? ` — ${piece.note}` : ""}`,
+    )
+    .join("\n");
+
+  return `HARD KEEP LIST — copy these objects from the FIRST input photo.
+Same silhouette, size, fabric/material, color, position, and orientation.
+Do not replace, restyle, reupholster, or move them. Design around them.
+${lines}`;
+}
 
 export function assembleImageInstruction(brief: DesignBrief): string {
   const {
@@ -27,31 +54,28 @@ export function assembleImageInstruction(brief: DesignBrief): string {
     .filter(Boolean)
     .join("; ");
 
-  const keepItems =
-    constraintsFromUser.keepItems.length > 0
-      ? constraintsFromUser.keepItems.join(", ")
-      : "none";
-
   const naturalSources = lighting.naturalSources
     .map((s) => `${s.type} on ${s.wall} (${s.orientation})`)
     .join(", ");
 
-  return `Re-decorate the room in the FIRST input image. This is a photo of a real room — keep it
+  return `OUTPUT a single photorealistic photograph. Do not reply with text.
+
+Re-decorate the room in the FIRST input image. This is a photo of a real room — keep it
 architecturally identical and shot from the same camera position.
 
 PRESERVE EXACTLY (do not alter): ${architectureSummary}; and these fixed elements: ${fixedElements.join(", ")}. Same camera angle
 (${cameraAngle}), same aspect ratio (${aspectRatio}), same perspective and lens.
 
-KEEP THESE ITEMS unchanged and in place: ${keepItems}.
+${keepConstraintBlock(brief)}
 
 REDESIGN in this direction: ${constraintsFromUser.style}, for a ${roomType} used for ${constraintsFromUser.function}.
 Layout: ${designStrategy.layoutConcept}. Focal point: ${designStrategy.focalPoint}.
 Palette: ${designStrategy.palette.join(", ")}. Materials: ${designStrategy.materials.join(", ")}.
-Furniture should look like real, buyable ${constraintsFromUser.budgetTier}-tier pieces available in ${constraintsFromUser.region}.
+New furniture should look like real, buyable ${constraintsFromUser.budgetTier}-tier pieces available in ${constraintsFromUser.region}.
 
 SCALE: the room is ~${dimensions.roomWidthM}m x ${dimensions.roomDepthM}m, ceiling ${architecture.ceilingHeightM}m. Size all
-furniture to real human proportions and keep walkways clear (≥75cm main paths). Nothing
-oversized, undersized, or floating.
+NEW furniture to real human proportions and keep walkways clear (≥75cm main paths). Nothing
+oversized, undersized, or floating. Keep-list pieces stay the size they already are.
 
 LIGHTING: preserve the real light — ${lighting.dominantDirection}, ${lighting.mood}.
 Shadows must fall consistently away from ${naturalSources}. One time of day. Add tasteful
@@ -67,20 +91,23 @@ verticals or perspective; second light source or contradictory shadows; melted m
 duplicated objects; text or logos; and generic AI-staging clichés (arched mirror,
 fiddle-leaf fig, bouclé overload, pillow overload).
 
-Photorealistic, same photographic quality as the input.
-
-${NON_NEGOTIABLE_RULES}`;
+Photorealistic, same photographic quality as the input.`;
 }
 
 export function assembleRefineInstruction(
   brief: DesignBrief,
   userInstruction: string,
 ): string {
-  const base = assembleImageInstruction(brief);
-  return `${base}
+  return `OUTPUT a single photorealistic photograph. Do not reply with text.
 
-REFINEMENT REQUEST (edit the current render in place — same room, same architecture, same camera):
-${userInstruction}
+Edit the FIRST input image (the current redesign) in place.
+Keep the same room, architecture, camera, and aspect ratio (${brief.aspectRatio}).
+Style remains ${brief.constraintsFromUser.style}. Region: ${brief.constraintsFromUser.region}.
 
-Change ONLY what the refinement request asks for. Keep everything else from the current render intact.`;
+${keepConstraintBlock(brief)}
+
+Apply only this change: ${userInstruction}
+
+Do not redesign from scratch. Do not change windows, doors, walls, or camera.
+The last input image is the original room photo for architectural reference only.`;
 }

@@ -1,5 +1,5 @@
 import { assembleRefineInstruction } from "@/lib/ai/prompt";
-import { renderRoom } from "@/lib/ai/render";
+import { renderRoom, toClientRenderResult } from "@/lib/ai/render";
 import { critiqueRender } from "@/lib/ai/critique";
 import { dataUrlToImageInput, urlToImageInput } from "@/lib/ai/images";
 import { designBriefSchema } from "@/lib/ai/schemas";
@@ -65,27 +65,28 @@ export async function POST(request: Request) {
 
       if (qualityGate) {
         send?.("Running quality check…");
-        const renderImage = await urlToImageInput(result.imageUrl);
         const critique = await critiqueRender({
           brief: parsedBrief.data,
-          renderImage,
+          renderImage: result.image,
           roomImage: roomImageInput,
         });
 
         if (!critique.passed && critique.correctiveInstruction) {
           send?.("Auto-refining based on quality check…");
-          const correctionInstruction = `${refineInstruction}\n\nCORRECTION REQUIRED:\n${critique.correctiveInstruction}`;
           result = await renderRoom({
-            instruction: correctionInstruction,
+            instruction: assembleRefineInstruction(
+              parsedBrief.data,
+              critique.correctiveInstruction,
+            ),
             roomImage: roomImageInput,
             styleReferences: styleRefInputs,
-            currentRender: renderImage,
+            currentRender: result.image,
           });
         }
       }
 
       send?.("Refinement complete");
-      return result;
+      return toClientRenderResult(result);
     };
 
     if (stream) {
