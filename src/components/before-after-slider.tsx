@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { ChevronsLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type BeforeAfterSliderProps = {
@@ -44,7 +45,7 @@ export function BeforeAfterSlider({
     <div
       ref={containerRef}
       className={cn(
-        "relative aspect-[3/2] w-full overflow-hidden rounded-lg bg-muted select-none",
+        "relative aspect-[3/2] w-full overflow-hidden rounded-3xl bg-muted select-none sm:rounded-[32px]",
         className,
       )}
       onPointerDown={handlePointerDown}
@@ -69,22 +70,17 @@ export function BeforeAfterSlider({
         />
       </div>
       <div
-        className="absolute inset-y-0 z-10 w-0.5 bg-white shadow-lg"
-        style={{ left: `${position}%` }}
+        className="absolute inset-y-0 z-10 w-1 bg-white"
+        style={{ left: `calc(${position}% - 2px)` }}
       >
-        <div
-          className="absolute top-1/2 left-1/2 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-white/90 shadow-md"
-        >
-          <div className="flex gap-0.5">
-            <div className="h-3 w-0.5 rounded-full bg-foreground/40" />
-            <div className="h-3 w-0.5 rounded-full bg-foreground/40" />
-          </div>
+        <div className="absolute top-1/2 left-1/2 flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-[0_4px_14px_rgba(36,28,23,0.25)]">
+          <ChevronsLeftRight className="size-[18px] text-foreground" strokeWidth={2.5} />
         </div>
       </div>
-      <div className="pointer-events-none absolute bottom-3 left-3 rounded bg-black/50 px-2 py-1 text-xs text-white">
+      <div className="pointer-events-none absolute top-4 left-4 rounded-full bg-white px-4 py-2 text-[13px] font-bold text-foreground sm:top-5 sm:left-5">
         Before
       </div>
-      <div className="pointer-events-none absolute bottom-3 right-3 rounded bg-black/50 px-2 py-1 text-xs text-white">
+      <div className="pointer-events-none absolute top-4 right-4 rounded-full bg-foreground px-4 py-2 text-[13px] font-bold text-background sm:top-5 sm:right-5">
         After
       </div>
     </div>

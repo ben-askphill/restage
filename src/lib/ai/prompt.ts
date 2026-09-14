@@ -28,7 +28,10 @@ Do not replace, restyle, reupholster, or move them. Design around them.
 ${lines}`;
 }
 
-export function assembleImageInstruction(brief: DesignBrief): string {
+export function assembleImageInstruction(
+  brief: DesignBrief,
+  styleProfile?: string,
+): string {
   const {
     architecture,
     fixedElements,
@@ -83,7 +86,12 @@ ambient/task/accent lighting only where plausibly placed and powered.
 
 STYLE REFERENCES (remaining input images, if any): borrow ONLY their mood, color story,
 materials and finish level. Do NOT copy their room, their layout, or their specific
-furniture — the room and layout come from the first image and the brief above.
+furniture — the room and layout come from the first image and the brief above.${
+    styleProfile
+      ? `
+Saved style profile (authoritative for mood/color/materials/finish): ${styleProfile}`
+      : ""
+  }
 
 AVOID: changing or adding/removing windows or doors; moving walls; blocking radiators,
 outlets or door swings; floating or clipping furniture; dollhouse or giant scale; warped

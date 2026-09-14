@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 
 const REFINE_CHIPS = [
@@ -36,19 +35,20 @@ export function RefineBar({ onRefine, disabled }: RefineBarProps) {
   };
 
   return (
-    <div className="sticky bottom-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="mx-auto max-w-4xl space-y-3 px-4 py-4">
-        <p className="text-sm font-medium">Refine this design</p>
-        <div className="flex flex-wrap gap-2">
+    <div className="sticky bottom-0 px-5 pb-5 sm:px-10">
+      <div className="mx-auto flex max-w-4xl flex-col gap-3 rounded-[28px] border border-border bg-background/95 p-4 shadow-[0_12px_32px_rgba(36,28,23,0.10)] backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:px-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-sm font-bold">Refine this design</span>
           {REFINE_CHIPS.map((chip) => (
-            <Badge
+            <button
               key={chip}
-              variant="outline"
-              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+              type="button"
+              disabled={disabled || loading}
+              className="rounded-full bg-muted px-3.5 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#ece8e2] disabled:opacity-50"
               onClick={() => handleRefine(chip.toLowerCase())}
             >
               {chip}
-            </Badge>
+            </button>
           ))}
         </div>
         <form
@@ -56,15 +56,20 @@ export function RefineBar({ onRefine, disabled }: RefineBarProps) {
             e.preventDefault();
             handleRefine(instruction);
           }}
-          className="flex gap-2"
+          className="flex gap-2.5"
         >
           <Input
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             placeholder="e.g. swap the sofa for something in cognac leather"
             disabled={disabled || loading}
+            className="h-12 grow rounded-full border-transparent bg-muted px-5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
           />
-          <Button type="submit" disabled={disabled || loading || !instruction.trim()}>
+          <Button
+            type="submit"
+            disabled={disabled || loading || !instruction.trim()}
+            className="h-12 rounded-full px-6 text-[15px] font-bold"
+          >
             {loading ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
