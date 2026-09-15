@@ -13,7 +13,7 @@ import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { ShoppingListView } from "@/components/shopping-list";
 import { RefineBar } from "@/components/refine-bar";
 import { Button } from "@/components/ui/button";
-import { callApi, fileToDataUrl } from "@/lib/client-api";
+import { callApi, fileToPreparedDataUrl } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 import type {
   DesignBrief,
@@ -100,9 +100,9 @@ export function RestageApp() {
     setStatusText("");
 
     try {
-      const roomImages = await Promise.all(roomFiles.map(fileToDataUrl));
+      const roomImages = await Promise.all(roomFiles.map(fileToPreparedDataUrl));
       const floorPlan = floorPlanFile[0]
-        ? await fileToDataUrl(floorPlanFile[0])
+        ? await fileToPreparedDataUrl(floorPlanFile[0])
         : undefined;
 
       setRoomDataUrl(roomImages[0]);
@@ -137,11 +137,17 @@ export function RestageApp() {
     setStatusText("");
 
     try {
+      // Re-encode from the file input so a stale HEIC data URL is not reused.
+      const roomImage = roomFiles[0]
+        ? await fileToPreparedDataUrl(roomFiles[0])
+        : roomDataUrl;
+      setRoomDataUrl(roomImage);
+
       // A selected saved style is resolved server-side via styleId; only fall
       // back to one-off data-URL references when no style is chosen.
       const styleRefs = selectedStyleId
         ? []
-        : await Promise.all(styleFiles.map(fileToDataUrl));
+        : await Promise.all(styleFiles.map(fileToPreparedDataUrl));
 
       setCurrentStage("design");
       const planned = await callApi<DesignBrief>(
@@ -160,7 +166,7 @@ export function RestageApp() {
             },
           },
           keepItems: brief.keepItems,
-          roomImage: roomDataUrl,
+          roomImage,
           styleId: selectedStyleId ?? undefined,
         },
         setStatusText,
@@ -173,7 +179,7 @@ export function RestageApp() {
         "/api/render",
         {
           designBrief: planned,
-          roomImage: roomDataUrl,
+          roomImage,
           styleReferences: styleRefs,
           styleId: selectedStyleId ?? undefined,
           qualityGate,
@@ -203,6 +209,7 @@ export function RestageApp() {
     canGenerate,
     inventory,
     roomDataUrl,
+    roomFiles,
     styleFiles,
     selectedStyleId,
     brief,
@@ -217,14 +224,18 @@ export function RestageApp() {
       setStatusText("Refining design…");
 
       try {
+        const roomImage = roomFiles[0]
+          ? await fileToPreparedDataUrl(roomFiles[0])
+          : roomDataUrl;
+        setRoomDataUrl(roomImage);
         const styleRefs = selectedStyleId
           ? []
-          : await Promise.all(styleFiles.map(fileToDataUrl));
+          : await Promise.all(styleFiles.map(fileToPreparedDataUrl));
         const refined = await callApi<RenderResult>(
           "/api/refine",
           {
             designBrief,
-            roomImage: roomDataUrl,
+            roomImage,
             currentRenderUrl: renderResult.imageUrl,
             instruction,
             styleReferences: styleRefs,
@@ -251,6 +262,7 @@ export function RestageApp() {
       designBrief,
       renderResult,
       roomDataUrl,
+      roomFiles,
       styleFiles,
       selectedStyleId,
       qualityGate,

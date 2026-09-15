@@ -1,3 +1,5 @@
+import { prepareImageForUpload } from "@/lib/prepare-image";
+
 const BODY_TOO_LARGE =
   /payload too large|request entity too large|body too large|content too large|functional payload/i;
 
@@ -128,4 +130,15 @@ export function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function isPdf(file: File): boolean {
+  return (
+    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+  );
+}
+
+/** Re-encode photos to sRGB JPEG so image models accept them. PDFs pass through. */
+export async function fileToPreparedDataUrl(file: File): Promise<string> {
+  return fileToDataUrl(isPdf(file) ? file : await prepareImageForUpload(file));
 }

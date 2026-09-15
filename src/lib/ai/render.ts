@@ -1,6 +1,7 @@
 import { generateImage } from "ai";
 import { getImageModel } from "./gateway";
-import { toFilePart, type ImageInput } from "./images";
+import { imageInputToDataUrl, toFilePart, type ImageInput } from "./images";
+import { normalizeImageForGeneration } from "./normalize-image";
 import { uploadRender } from "@/lib/blob";
 import { DEFAULT_IMAGE_QUALITY, DEFAULT_IMAGE_SIZE } from "@/lib/env";
 
@@ -37,9 +38,18 @@ type GeneratedImageFile = {
 async function generateRoomImage(
   content: PromptPart[],
 ): Promise<GeneratedImageFile> {
-  const images = content
-    .filter((part) => part.type === "file")
-    .map((part) => part.data);
+  const images = await Promise.all(
+    content
+      .filter((part) => part.type === "file")
+      .map(async (part) =>
+        imageInputToDataUrl(
+          await normalizeImageForGeneration({
+            data: part.data,
+            mediaType: part.mediaType,
+          }),
+        ),
+      ),
+  );
   const text = content
     .filter((part) => part.type === "text")
     .map((part) => part.text)

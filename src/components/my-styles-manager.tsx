@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ImageIcon,
@@ -11,6 +11,8 @@ import {
 import { UploadZone } from "@/components/upload-zone";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { callApi } from "@/lib/client-api";
 import {
   deleteStyle as deleteStyleApi,
@@ -37,6 +39,9 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [naming, setNaming] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [openStyle, setOpenStyle] = useState<StyleForClient | null>(null);
@@ -74,24 +79,40 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
     };
   }, []);
 
-  const handleCreate = useCallback(async () => {
-    const name = window.prompt("Name this style folder");
-    if (!name || !name.trim()) return;
-
-    setCreating(true);
+  const startNaming = useCallback(() => {
+    setDraftName("");
+    setNaming(true);
+    setPendingDeleteId(null);
     setError(null);
-    try {
-      await callApi<{ style: StyleForClient }>("/api/styles", {
-        name: name.trim(),
-      });
-      await refresh();
-      onStylesChanged?.();
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setCreating(false);
-    }
-  }, [refresh, onStylesChanged]);
+  }, []);
+
+  const cancelNaming = useCallback(() => {
+    setNaming(false);
+    setDraftName("");
+  }, []);
+
+  const handleCreate = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const name = draftName.trim();
+      if (!name) return;
+
+      setCreating(true);
+      setError(null);
+      try {
+        await callApi<{ style: StyleForClient }>("/api/styles", { name });
+        setNaming(false);
+        setDraftName("");
+        await refresh();
+        onStylesChanged?.();
+      } catch (err) {
+        setError(errorMessage(err));
+      } finally {
+        setCreating(false);
+      }
+    },
+    [draftName, refresh, onStylesChanged],
+  );
 
   const handleOpen = useCallback(async (id: string) => {
     setOpenId(id);
@@ -140,15 +161,14 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
     [openId, refresh, onStylesChanged],
   );
 
+  const requestDelete = useCallback((id: string) => {
+    setPendingDeleteId(id);
+    setNaming(false);
+    setError(null);
+  }, []);
+
   const handleDelete = useCallback(
     async (id: string) => {
-      if (
-        !window.confirm(
-          "Delete this style folder? Its saved images will be removed.",
-        )
-      ) {
-        return;
-      }
       setDeletingId(id);
       setError(null);
       try {
@@ -157,6 +177,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
           setOpenId(null);
           setOpenStyle(null);
         }
+        setPendingDeleteId(null);
         await refresh();
         onStylesChanged?.();
       } catch (err) {
@@ -168,6 +189,13 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
     [openId, refresh, onStylesChanged],
   );
 
+  const pendingDeleteName =
+    (pendingDeleteId &&
+      (openStyle?.id === pendingDeleteId
+        ? openStyle.name
+        : styles.find((style) => style.id === pendingDeleteId)?.name)) ||
+    "this style folder";
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -178,17 +206,88 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
             profile automatically.
           </p>
         </div>
-        {!openId && (
-          <Button size="sm" onClick={handleCreate} disabled={creating}>
-            {creating ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Plus className="size-3.5" />
-            )}
+        {!openId && !naming && (
+          <Button size="sm" onClick={startNaming} disabled={creating}>
+            <Plus className="size-3.5" />
             New style
           </Button>
         )}
       </div>
+
+      {naming && (
+        <form
+          onSubmit={handleCreate}
+          className="space-y-3 rounded-lg border p-4"
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="new-style-name">Name this style folder</Label>
+            <Input
+              id="new-style-name"
+              value={draftName}
+              onChange={(event) => setDraftName(event.target.value)}
+              placeholder="e.g. Modern Traditional"
+              autoFocus
+              disabled={creating}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={cancelNaming}
+              disabled={creating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={creating || !draftName.trim()}
+            >
+              {creating ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Plus className="size-3.5" />
+              )}
+              Create
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {pendingDeleteId && (
+        <div className="space-y-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          <p className="text-sm text-destructive">
+            Delete {pendingDeleteName}? Its saved images will be removed.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setPendingDeleteId(null)}
+              disabled={deletingId === pendingDeleteId}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(pendingDeleteId)}
+              disabled={deletingId === pendingDeleteId}
+            >
+              {deletingId === pendingDeleteId ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="size-3.5" />
+              )}
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -242,7 +341,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => handleDelete(openStyle.id)}
+                  onClick={() => requestDelete(openStyle.id)}
                   disabled={deletingId === openStyle.id}
                 >
                   {deletingId === openStyle.id ? (
@@ -344,7 +443,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
               <Button
                 size="sm"
                 className="mt-4"
-                onClick={handleCreate}
+                onClick={startNaming}
                 disabled={creating}
               >
                 <Plus className="size-3.5" />
@@ -397,7 +496,7 @@ export function MyStylesManager({ onStylesChanged }: MyStylesManagerProps) {
                     variant="secondary"
                     size="icon-sm"
                     className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
-                    onClick={() => handleDelete(style.id)}
+                    onClick={() => requestDelete(style.id)}
                     disabled={deletingId === style.id}
                     aria-label={`Delete ${style.name}`}
                   >

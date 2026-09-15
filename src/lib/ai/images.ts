@@ -29,10 +29,18 @@ export function dataUrlToImageInput(dataUrl: string): ImageInput {
     throw new Error("Invalid data URL format");
   }
 
-  const mediaType = match[1];
+  const mediaType = canonicalizeImageMediaType(match[1]);
   const base64 = match[2];
   const binary = Buffer.from(base64, "base64");
   return { data: new Uint8Array(binary), mediaType };
+}
+
+function canonicalizeImageMediaType(type: string): string {
+  const normalized = type.toLowerCase().split(";")[0]?.trim() ?? "";
+  if (normalized === "image/jpg" || normalized === "image/pjpeg") {
+    return "image/jpeg";
+  }
+  return normalized || "image/jpeg";
 }
 
 export async function urlToImageInput(url: string): Promise<ImageInput> {
