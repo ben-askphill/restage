@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { itemsMatch } from "@/lib/ai/keep";
 import {
   labelFromFilename,
   MAX_PIECE_REFERENCES,
@@ -287,6 +288,14 @@ export function PiecePicker({
                               {item.item}
                             </SelectItem>
                           ))}
+                          {piece.replaces.trim() &&
+                          !furniture.some((item) =>
+                            itemsMatch(item.item, piece.replaces),
+                          ) ? (
+                            <SelectItem value={piece.replaces.trim()}>
+                              {piece.replaces.trim()}
+                            </SelectItem>
+                          ) : null}
                         </SelectContent>
                       </Select>
                     ) : (
