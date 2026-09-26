@@ -27,6 +27,7 @@ export function getDesignerModel() {
   return getGateway()(DEFAULT_DESIGNER_MODEL);
 }
 
+/** Gemini image models are multimodal chat models. Call them with generateText. */
 export function getImageModel() {
-  return getGateway().imageModel(DEFAULT_IMAGE_MODEL);
+  return getGateway()(DEFAULT_IMAGE_MODEL);
 }

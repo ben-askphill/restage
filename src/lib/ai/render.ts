@@ -1,6 +1,6 @@
-import { generateImage } from "ai";
+import { generateText } from "ai";
 import { getImageModel } from "./gateway";
-import { imageInputToDataUrl, toFilePart, type ImageInput } from "./images";
+import { toFilePart, type ImageInput } from "./images";
 import { normalizeImageForGeneration } from "./normalize-image";
 import { formatPieceLine, pieceConstraintBlock } from "./piece-meta";
 import type { PieceWithImage } from "./pieces";
@@ -39,34 +39,75 @@ type GeneratedImageFile = {
   uint8Array: Uint8Array;
 };
 
+type GeminiImageSize = "512" | "1K" | "2K";
+
+function imageSizeForQuality(quality: string): GeminiImageSize {
+  switch (quality) {
+    case "low":
+      return "512";
+    case "high":
+      return "2K";
+    case "medium":
+    case "auto":
+      return "1K";
+    default:
+      return "1K";
+  }
+}
+
+function aspectRatioForSize(size: string): "3:2" | "2:3" | "1:1" | undefined {
+  switch (size) {
+    case "1536x1024":
+      return "3:2";
+    case "1024x1536":
+      return "2:3";
+    case "1024x1024":
+      return "1:1";
+    default:
+      return undefined;
+  }
+}
+
 async function generateRoomImage(
   content: PromptPart[],
 ): Promise<GeneratedImageFile> {
-  const images = await Promise.all(
-    content
-      .filter((part) => part.type === "file")
-      .map(async (part) =>
-        imageInputToDataUrl(
-          await normalizeImageForGeneration({
-            data: part.data,
-            mediaType: part.mediaType,
-          }),
-        ),
-      ),
-  );
-  const text = content
-    .filter((part) => part.type === "text")
-    .map((part) => part.text)
-    .join("\n\n");
+  const parts: PromptPart[] = [];
+  for (const part of content) {
+    if (part.type === "text") {
+      parts.push(part);
+      continue;
+    }
+    const normalized = await normalizeImageForGeneration(part);
+    parts.push({
+      type: "file",
+      data: normalized.data,
+      mediaType: normalized.mediaType,
+    });
+  }
 
-  const { image } = await generateImage({
+  const aspectRatio = aspectRatioForSize(DEFAULT_IMAGE_SIZE);
+  const result = await generateText({
     model: getImageModel(),
-    prompt: { images, text },
-    size: DEFAULT_IMAGE_SIZE as `${number}x${number}`,
-    providerOptions: { openai: { quality: DEFAULT_IMAGE_QUALITY } },
+    messages: [{ role: "user", content: parts }],
+    providerOptions: {
+      google: {
+        responseModalities: ["TEXT", "IMAGE"],
+        imageConfig: {
+          imageSize: imageSizeForQuality(DEFAULT_IMAGE_QUALITY),
+          ...(aspectRatio ? { aspectRatio } : {}),
+        },
+      },
+    },
   });
 
-  return { mediaType: image.mediaType, uint8Array: image.uint8Array };
+  const imageFile = result.files
+    .filter((file) => file.mediaType?.startsWith("image/"))
+    .at(-1);
+  if (!imageFile) {
+    throw new Error("The image model did not return an image.");
+  }
+
+  return { mediaType: imageFile.mediaType, uint8Array: imageFile.uint8Array };
 }
 
 export async function renderRoom(input: RenderInput): Promise<RenderOutput> {

@@ -26,10 +26,10 @@ export const DEFAULT_DESIGNER_MODEL =
   process.env.DESIGNER_MODEL ?? "deepseek/deepseek-v4-flash-vision-exp";
 
 export const DEFAULT_IMAGE_MODEL =
-  process.env.IMAGE_MODEL ?? "google/gemini-2.5-flash-image";
+  process.env.IMAGE_MODEL ?? "google/gemini-3.1-flash-image";
 
-// Output resolution. gpt-image accepts 1024x1024, 1536x1024, 1024x1536, or auto.
+// Landscape/portrait hint for Gemini image output. 1536x1024 → 3:2, 1024x1536 → 2:3, 1024x1024 → 1:1. auto leaves aspect to the room photo.
 export const DEFAULT_IMAGE_SIZE = process.env.IMAGE_SIZE ?? "1536x1024";
 
-// Rendering quality: low | medium | high | auto.
+// Gemini image resolution: low → 512, medium/auto → 1K, high → 2K.
 export const DEFAULT_IMAGE_QUALITY = process.env.IMAGE_QUALITY ?? "high";
