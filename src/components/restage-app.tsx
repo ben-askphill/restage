@@ -25,9 +25,62 @@ import type {
   ShoppingList,
   UserBriefInput,
 } from "@/lib/ai/schemas";
-import { Check, ChevronDown, Loader2, ScanSearch, Sofa, Sparkles } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Download,
+  Loader2,
+  ScanSearch,
+  Sofa,
+  Sparkles,
+} from "lucide-react";
 
 type RenderResult = { imageUrl: string; mediaType: string };
+
+function extensionForMediaType(mediaType: string): string {
+  const type = mediaType.toLowerCase().split(";")[0]?.trim() ?? "";
+  switch (type) {
+    case "image/jpeg":
+    case "image/jpg":
+    case "image/pjpeg":
+      return "jpg";
+    case "image/png":
+      return "png";
+    case "image/webp":
+      return "webp";
+    case "image/gif":
+      return "gif";
+    case "image/svg+xml":
+      return "svg";
+    default:
+      return "jpg";
+  }
+}
+
+function downloadFilename(roomType: string, mediaType: string): string {
+  const slug =
+    roomType
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "room";
+  return `restage-${slug}.${extensionForMediaType(mediaType)}`;
+}
+
+async function downloadImage(url: string, filename: string): Promise<void> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Couldn't download the image");
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
 
 async function draftsToPayloads(
   pieces: PieceDraft[],
@@ -113,6 +166,7 @@ export function RestageApp() {
   const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
   const [roomDataUrl, setRoomDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const busy = analyzing || generating;
   const canAnalyze = roomFiles.length > 0 && brief.function.trim().length > 0;
@@ -656,6 +710,43 @@ export function RestageApp() {
               beforeSrc={roomDataUrl}
               afterSrc={renderResult.imageUrl}
             />
+
+            <div className="flex justify-center sm:justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={downloading}
+                onClick={async () => {
+                  setDownloading(true);
+                  setError(null);
+                  try {
+                    await downloadImage(
+                      renderResult.imageUrl,
+                      downloadFilename(
+                        designBrief.roomType,
+                        renderResult.mediaType,
+                      ),
+                    );
+                  } catch (err) {
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : "Couldn't download the image",
+                    );
+                  } finally {
+                    setDownloading(false);
+                  }
+                }}
+                className="h-12 gap-2 rounded-full px-6 text-[15px] font-bold"
+              >
+                {downloading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Download />
+                )}
+                Download image
+              </Button>
+            </div>
 
             <div className="flex flex-col gap-5 rounded-3xl border border-border p-6 sm:p-8">
               <h3 className="text-[22px] font-extrabold tracking-[-0.02em]">
