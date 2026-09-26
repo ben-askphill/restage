@@ -2,6 +2,7 @@ import { generateObject } from "ai";
 import { DESIGNER_SYSTEM_PROMPT } from "./constants";
 import { getDesignerModel } from "./gateway";
 import type { ImageInput } from "./images";
+import { formatPieceLines } from "./piece-meta";
 import {
   shoppingListSchema,
   type DesignBrief,
@@ -17,6 +18,13 @@ export async function generateShoppingList(
   input: ShoppingInput,
 ): Promise<ShoppingList> {
   const { brief, renderImage } = input;
+  const specified = brief.pieceReferences ?? [];
+  const specifiedBlock =
+    specified.length > 0
+      ? `
+- User-specified pieces (include each as a shopping item matching the photographed object so the user can find it or a close buyable match; say in \`why\` that it was specified by the user; do not substitute a different typology):
+${formatPieceLines(specified)}`
+      : "";
 
   const result = await generateObject({
     model: getDesignerModel(),
@@ -38,7 +46,7 @@ Rules:
 - Give retailer names + a search query the user can run. Do NOT fabricate product URLs or claim live prices/stock.
 - Present prices as estimates in local currency.
 - Match approximate dimensions to the scale used in the render.
-- Do NOT include keep-list items. The user is keeping: ${brief.constraintsFromUser.keepItems.join(", ") || "nothing specified"}.
+- Do NOT include keep-list items. The user is keeping: ${brief.constraintsFromUser.keepItems.join(", ") || "nothing specified"}.${specifiedBlock}
 - Include a notes field explaining prices are estimates.`,
           },
           {

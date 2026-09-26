@@ -2,6 +2,8 @@ import { generateImage } from "ai";
 import { getImageModel } from "./gateway";
 import { imageInputToDataUrl, toFilePart, type ImageInput } from "./images";
 import { normalizeImageForGeneration } from "./normalize-image";
+import { formatPieceLine, pieceConstraintBlock } from "./piece-meta";
+import type { PieceWithImage } from "./pieces";
 import { uploadRender } from "@/lib/blob";
 import { DEFAULT_IMAGE_QUALITY, DEFAULT_IMAGE_SIZE } from "@/lib/env";
 
@@ -9,6 +11,8 @@ export type RenderInput = {
   instruction: string;
   roomImage: ImageInput;
   styleReferences?: ImageInput[];
+  /** Object-level piece photos to copy into the room (replace or add). */
+  pieceReferences?: PieceWithImage[];
   /** When refining, pass the current render as the primary edit target */
   currentRender?: ImageInput;
 };
@@ -66,8 +70,13 @@ async function generateRoomImage(
 }
 
 export async function renderRoom(input: RenderInput): Promise<RenderOutput> {
-  const { instruction, roomImage, styleReferences = [], currentRender } =
-    input;
+  const {
+    instruction,
+    roomImage,
+    styleReferences = [],
+    pieceReferences = [],
+    currentRender,
+  } = input;
 
   const content: PromptPart[] = [{ type: "text", text: instruction }];
 
@@ -90,10 +99,24 @@ export async function renderRoom(input: RenderInput): Promise<RenderOutput> {
   if (styleReferences.length > 0) {
     content.push({
       type: "text",
-      text: "Style reference images (mood/materials only — do NOT copy layout):",
+      text: "Style reference images (mood/materials only — do NOT copy layout or specific furniture):",
     });
     for (const ref of styleReferences) {
       content.push(toFilePart(ref));
+    }
+  }
+
+  if (pieceReferences.length > 0) {
+    content.push({
+      type: "text",
+      text: pieceConstraintBlock(pieceReferences.map((piece) => piece.meta)),
+    });
+    for (const [index, piece] of pieceReferences.entries()) {
+      content.push({
+        type: "text",
+        text: formatPieceLine(piece.meta, index),
+      });
+      content.push(toFilePart(piece.image));
     }
   }
 

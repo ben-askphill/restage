@@ -1,5 +1,6 @@
 import { planDesign } from "@/lib/ai/plan";
 import { dataUrlToImageInput } from "@/lib/ai/images";
+import { parsePiecePayloads } from "@/lib/ai/pieces";
 import { roomInventorySchema } from "@/lib/ai/schemas";
 import { loadManifest } from "@/lib/ai/styles";
 import { styleProfileToText } from "@/lib/ai/style-profile";
@@ -14,6 +15,7 @@ const planRequestSchema = z.object({
   keepItems: z.array(z.string()),
   roomImage: z.string().min(1),
   styleId: z.string().optional(),
+  pieceReferences: z.unknown().optional(),
 });
 
 async function resolveStyleProfileText(
@@ -38,6 +40,14 @@ export async function POST(request: Request) {
 
     const roomImage = dataUrlToImageInput(parsed.data.roomImage);
     const styleProfile = await resolveStyleProfileText(parsed.data.styleId);
+    let pieceReferences;
+    try {
+      pieceReferences = parsePiecePayloads(parsed.data.pieceReferences);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Invalid piece references";
+      return apiError(message, 400);
+    }
 
     if (stream) {
       return streamStatus(async (send) => {
@@ -47,6 +57,7 @@ export async function POST(request: Request) {
           keepItems: parsed.data.keepItems,
           roomImage,
           styleProfile,
+          pieceReferences,
         });
         send("Design strategy ready");
         return brief;
@@ -58,6 +69,7 @@ export async function POST(request: Request) {
       keepItems: parsed.data.keepItems,
       roomImage,
       styleProfile,
+      pieceReferences,
     });
 
     return Response.json(brief);

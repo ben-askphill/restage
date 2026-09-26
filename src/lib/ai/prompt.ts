@@ -1,4 +1,5 @@
 import { keptFurniture } from "./keep";
+import { pieceConstraintBlock } from "./piece-meta";
 import type { DesignBrief } from "./schemas";
 
 function keepConstraintBlock(brief: DesignBrief): string {
@@ -26,6 +27,12 @@ function keepConstraintBlock(brief: DesignBrief): string {
 Same silhouette, size, fabric/material, color, position, and orientation.
 Do not replace, restyle, reupholster, or move them. Design around them.
 ${lines}`;
+}
+
+function pieceBlock(brief: DesignBrief): string {
+  const pieces = brief.pieceReferences ?? [];
+  if (pieces.length === 0) return "";
+  return `\n${pieceConstraintBlock(pieces)}\n`;
 }
 
 export function assembleImageInstruction(
@@ -70,7 +77,7 @@ PRESERVE EXACTLY (do not alter): ${architectureSummary}; and these fixed element
 (${cameraAngle}), same aspect ratio (${aspectRatio}), same perspective and lens.
 
 ${keepConstraintBlock(brief)}
-
+${pieceBlock(brief)}
 REDESIGN in this direction: ${constraintsFromUser.style}, for a ${roomType} used for ${constraintsFromUser.function}.
 Layout: ${designStrategy.layoutConcept}. Focal point: ${designStrategy.focalPoint}.
 Palette: ${designStrategy.palette.join(", ")}. Materials: ${designStrategy.materials.join(", ")}.
@@ -84,9 +91,12 @@ LIGHTING: preserve the real light — ${lighting.dominantDirection}, ${lighting.
 Shadows must fall consistently away from ${naturalSources}. One time of day. Add tasteful
 ambient/task/accent lighting only where plausibly placed and powered.
 
-STYLE REFERENCES (remaining input images, if any): borrow ONLY their mood, color story,
+STYLE REFERENCES (labeled style images only, if any): borrow ONLY their mood, color story,
 materials and finish level. Do NOT copy their room, their layout, or their specific
-furniture — the room and layout come from the first image and the brief above.${
+furniture — the room and layout come from the first image and the brief above.
+
+PIECE PHOTOS (labeled object images, if any) are specific furniture/lighting/rugs to place.
+Copy those objects. They are not style references.${
     styleProfile
       ? `
 Saved style profile (authoritative for mood/color/materials/finish): ${styleProfile}`
@@ -113,7 +123,7 @@ Keep the same room, architecture, camera, and aspect ratio (${brief.aspectRatio}
 Style remains ${brief.constraintsFromUser.style}. Region: ${brief.constraintsFromUser.region}.
 
 ${keepConstraintBlock(brief)}
-
+${pieceBlock(brief)}
 Apply only this change: ${userInstruction}
 
 Do not redesign from scratch. Do not change windows, doors, walls, or camera.

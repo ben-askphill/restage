@@ -13,6 +13,28 @@ export const userBriefInputSchema = z.object({
 
 export type UserBriefInput = z.infer<typeof userBriefInputSchema>;
 
+/** Object-level reference: a photo of a specific sofa, lamp, rug, etc. */
+export const pieceIntentSchema = z.enum(["replace", "add"]);
+
+export type PieceIntent = z.infer<typeof pieceIntentSchema>;
+
+export const pieceReferenceSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  intent: pieceIntentSchema,
+  /** Existing furniture item this photo should replace. Used when intent is "replace". */
+  replaces: z.string().optional(),
+});
+
+export type PieceReference = z.infer<typeof pieceReferenceSchema>;
+
+/** Client → plan/render/refine: metadata plus a prepared image data URL. */
+export const pieceReferencePayloadSchema = pieceReferenceSchema.extend({
+  image: z.string().min(1),
+});
+
+export type PieceReferencePayload = z.infer<typeof pieceReferencePayloadSchema>;
+
 const windowDoorSchema = z.object({
   location: z.string(),
   keep: z.boolean(),
@@ -82,6 +104,8 @@ export type RoomInventory = z.infer<typeof roomInventorySchema>;
 
 export const designBriefSchema = roomInventorySchema.extend({
   designStrategy: designStrategySchema,
+  /** Specific objects the user supplied photos of (not style-folder inspiration). */
+  pieceReferences: z.array(pieceReferenceSchema).default([]),
 });
 
 export type DesignBrief = z.infer<typeof designBriefSchema>;
