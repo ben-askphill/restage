@@ -13,6 +13,8 @@ type KeepPickerProps = {
   keepItems: string[];
   onChange: (keepItems: string[]) => void;
   disabled?: boolean;
+  /** Existing items the user is swapping out with an uploaded piece photo. */
+  replacedItems?: string[];
 };
 
 type KeepRowProps = {
@@ -20,37 +22,51 @@ type KeepRowProps = {
   note?: string;
   kept: boolean;
   disabled: boolean;
+  replaced: boolean;
   onToggle: (checked: boolean) => void;
 };
 
-function KeepRow({ item, note, kept, disabled, onToggle }: KeepRowProps) {
+function KeepRow({
+  item,
+  note,
+  kept,
+  disabled,
+  replaced,
+  onToggle,
+}: KeepRowProps) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={kept}
-      disabled={disabled}
+      disabled={disabled || replaced}
       onClick={() => onToggle(!kept)}
       className={cn(
         "flex w-full items-center gap-3.5 rounded-2xl border px-4.5 py-3.5 text-left transition-colors disabled:opacity-50",
-        kept
-          ? "border-tint-border bg-tint"
-          : "border-border bg-background hover:bg-muted/50",
+        replaced
+          ? "border-border bg-muted/60"
+          : kept
+            ? "border-tint-border bg-tint"
+            : "border-border bg-background hover:bg-muted/50",
       )}
     >
       <span
         className={cn(
           "flex size-[26px] shrink-0 items-center justify-center rounded-lg",
-          kept ? "bg-primary" : "border-2 border-[#cdc5bc]",
+          kept && !replaced ? "bg-primary" : "border-2 border-[#cdc5bc]",
         )}
       >
-        {kept && (
+        {kept && !replaced && (
           <Check className="size-3.5 text-primary-foreground" strokeWidth={3} />
         )}
       </span>
       <span className="flex flex-col gap-0.5">
         <span className="text-[15px] font-bold">{item}</span>
-        {note ? (
+        {replaced ? (
+          <span className="text-[13px] text-muted-foreground">
+            Replaced by your uploaded piece
+          </span>
+        ) : note ? (
           <span className="text-[13px] text-muted-foreground">{note}</span>
         ) : null}
       </span>
@@ -63,13 +79,18 @@ export function KeepPicker({
   keepItems,
   onChange,
   disabled = false,
+  replacedItems = [],
 }: KeepPickerProps) {
   const [manualItem, setManualItem] = useState("");
 
   const isKept = (item: string) =>
     keepItems.some((keep) => itemsMatch(item, keep));
 
+  const isReplaced = (item: string) =>
+    replacedItems.some((target) => itemsMatch(item, target));
+
   const toggleItem = (item: string, checked: boolean) => {
+    if (isReplaced(item)) return;
     if (checked) {
       if (isKept(item)) return;
       onChange([...keepItems, item]);
@@ -80,7 +101,7 @@ export function KeepPicker({
 
   const addManualItem = () => {
     const trimmed = manualItem.trim();
-    if (!trimmed || isKept(trimmed)) {
+    if (!trimmed || isKept(trimmed) || isReplaced(trimmed)) {
       setManualItem("");
       return;
     }
@@ -102,6 +123,7 @@ export function KeepPicker({
             note={piece.note ?? undefined}
             kept={isKept(piece.item)}
             disabled={disabled}
+            replaced={isReplaced(piece.item)}
             onToggle={(checked) => toggleItem(piece.item, checked)}
           />
         ))}
@@ -111,6 +133,7 @@ export function KeepPicker({
             item={item}
             kept
             disabled={disabled}
+            replaced={isReplaced(item)}
             onToggle={(checked) => toggleItem(item, checked)}
           />
         ))}

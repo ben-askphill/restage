@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { UploadZone } from "@/components/upload-zone";
 import { StylePicker } from "@/components/style-picker";
 import { BriefForm } from "@/components/brief-form";
 import { KeepPicker } from "@/components/keep-picker";
+import { PiecePicker, type PieceDraft } from "@/components/piece-picker";
 import {
   ProgressStages,
   type StageId,
@@ -14,9 +15,12 @@ import { ShoppingListView } from "@/components/shopping-list";
 import { RefineBar } from "@/components/refine-bar";
 import { Button } from "@/components/ui/button";
 import { callApi, fileToPreparedDataUrl } from "@/lib/client-api";
+import { itemsMatch } from "@/lib/ai/keep";
+import { describePieceIntent, labelFromFilename } from "@/lib/ai/piece-meta";
 import { cn } from "@/lib/utils";
 import type {
   DesignBrief,
+  PieceReferencePayload,
   RoomInventory,
   ShoppingList,
   UserBriefInput,
@@ -24,6 +28,46 @@ import type {
 import { Check, ChevronDown, Loader2, ScanSearch, Sofa, Sparkles } from "lucide-react";
 
 type RenderResult = { imageUrl: string; mediaType: string };
+
+async function draftsToPayloads(
+  pieces: PieceDraft[],
+): Promise<PieceReferencePayload[]> {
+  return Promise.all(
+    pieces.map(async (piece) => {
+      const label = piece.label.trim() || labelFromFilename(piece.file.name);
+      const payload: PieceReferencePayload = {
+        id: piece.id,
+        label,
+        intent: piece.intent,
+        image: await fileToPreparedDataUrl(piece.file),
+      };
+      if (piece.intent === "replace") {
+        const target = piece.replaces.trim();
+        if (target) payload.replaces = target;
+      }
+      return payload;
+    }),
+  );
+}
+
+function pieceChipLabel(piece: {
+  label: string;
+  intent: PieceReferencePayload["intent"];
+  replaces?: string;
+}): string {
+  switch (piece.intent) {
+    case "replace":
+      return piece.replaces
+        ? `Replaces ${piece.replaces}: ${piece.label}`
+        : `Replace with ${piece.label}`;
+    case "add":
+      return `Add: ${piece.label}`;
+    default: {
+      const _exhaustive: never = piece.intent;
+      return `${describePieceIntent(_exhaustive)}: ${piece.label}`;
+    }
+  }
+}
 
 function getDefaultRegion(): string {
   if (typeof navigator === "undefined") return "United States";
@@ -49,8 +93,12 @@ export function RestageApp() {
   const [styleFiles, setStyleFiles] = useState<File[]>([]);
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [oneOffOpen, setOneOffOpen] = useState(false);
+  const [pieces, setPieces] = useState<PieceDraft[]>([]);
   const [floorPlanFile, setFloorPlanFile] = useState<File[]>([]);
-  const [brief, setBrief] = useState<UserBriefInput>(defaultBrief);
+  const [brief, setBrief] = useState<UserBriefInput>(() => ({
+    ...defaultBrief,
+    region: getDefaultRegion(),
+  }));
   const [qualityGate, setQualityGate] = useState(true);
 
   const [analyzing, setAnalyzing] = useState(false);
@@ -66,15 +114,26 @@ export function RestageApp() {
   const [roomDataUrl, setRoomDataUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setBrief((current) => ({ ...current, region: getDefaultRegion() }));
-  }, []);
-
   const busy = analyzing || generating;
   const canAnalyze = roomFiles.length > 0 && brief.function.trim().length > 0;
   const canGenerate = inventory !== null && roomDataUrl !== null;
   const hasResults = designBrief && renderResult && roomDataUrl;
   const showKeepStep = inventory !== null && !hasResults && !generating;
+
+  const handlePiecesChange = (next: PieceDraft[]) => {
+    setPieces(next);
+    const replaced = next
+      .filter((piece) => piece.intent === "replace" && piece.replaces.trim())
+      .map((piece) => piece.replaces.trim());
+    if (replaced.length === 0) return;
+    setBrief((current) => {
+      const keepItems = current.keepItems.filter(
+        (keep) => !replaced.some((item) => itemsMatch(keep, item)),
+      );
+      if (keepItems.length === current.keepItems.length) return current;
+      return { ...current, keepItems };
+    });
+  };
 
   const resetFromPhotoChange = (files: File[]) => {
     setRoomFiles(files);
@@ -148,6 +207,7 @@ export function RestageApp() {
       const styleRefs = selectedStyleId
         ? []
         : await Promise.all(styleFiles.map(fileToPreparedDataUrl));
+      const pieceReferences = await draftsToPayloads(pieces);
 
       setCurrentStage("design");
       const planned = await callApi<DesignBrief>(
@@ -168,6 +228,7 @@ export function RestageApp() {
           keepItems: brief.keepItems,
           roomImage,
           styleId: selectedStyleId ?? undefined,
+          pieceReferences,
         },
         setStatusText,
       );
@@ -182,6 +243,7 @@ export function RestageApp() {
           roomImage,
           styleReferences: styleRefs,
           styleId: selectedStyleId ?? undefined,
+          pieceReferences,
           qualityGate,
         },
         setStatusText,
@@ -212,6 +274,7 @@ export function RestageApp() {
     roomFiles,
     styleFiles,
     selectedStyleId,
+    pieces,
     brief,
     qualityGate,
   ]);
@@ -231,6 +294,7 @@ export function RestageApp() {
         const styleRefs = selectedStyleId
           ? []
           : await Promise.all(styleFiles.map(fileToPreparedDataUrl));
+        const pieceReferences = await draftsToPayloads(pieces);
         const refined = await callApi<RenderResult>(
           "/api/refine",
           {
@@ -240,6 +304,7 @@ export function RestageApp() {
             instruction,
             styleReferences: styleRefs,
             styleId: selectedStyleId ?? undefined,
+            pieceReferences,
             qualityGate,
           },
           setStatusText,
@@ -265,6 +330,7 @@ export function RestageApp() {
       roomFiles,
       styleFiles,
       selectedStyleId,
+      pieces,
       qualityGate,
     ],
   );
@@ -375,6 +441,16 @@ export function RestageApp() {
               </div>
             </section>
 
+            {!inventory && (
+              <section className="space-y-4">
+                <PiecePicker
+                  pieces={pieces}
+                  onChange={handlePiecesChange}
+                  disabled={busy}
+                />
+              </section>
+            )}
+
             <section className="space-y-7">
               <div className="space-y-1.5">
                 <h2 className="text-[28px] font-extrabold tracking-[-0.02em]">
@@ -468,9 +544,22 @@ export function RestageApp() {
               <KeepPicker
                 furniture={inventory.existingFurniture}
                 keepItems={brief.keepItems}
+                replacedItems={pieces
+                  .filter(
+                    (piece) =>
+                      piece.intent === "replace" && piece.replaces.trim(),
+                  )
+                  .map((piece) => piece.replaces.trim())}
                 onChange={(keepItems) =>
                   setBrief((current) => ({ ...current, keepItems }))
                 }
+                disabled={busy}
+              />
+
+              <PiecePicker
+                pieces={pieces}
+                onChange={handlePiecesChange}
+                furniture={inventory.existingFurniture}
                 disabled={busy}
               />
 
@@ -542,6 +631,22 @@ export function RestageApp() {
                     className="rounded-full bg-muted px-3.5 py-1.5 text-[13px] font-semibold"
                   >
                     {item}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {(designBrief.pieceReferences ?? []).length > 0 && (
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="text-sm font-bold text-muted-foreground">
+                  Your pieces:
+                </span>
+                {designBrief.pieceReferences.map((piece) => (
+                  <span
+                    key={piece.id}
+                    className="rounded-full bg-tint px-3.5 py-1.5 text-[13px] font-semibold text-tint-foreground"
+                  >
+                    {pieceChipLabel(piece)}
                   </span>
                 ))}
               </div>

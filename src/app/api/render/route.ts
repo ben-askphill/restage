@@ -2,6 +2,7 @@ import { assembleImageInstruction, assembleRefineInstruction } from "@/lib/ai/pr
 import { renderRoom, toClientRenderResult } from "@/lib/ai/render";
 import { critiqueRender } from "@/lib/ai/critique";
 import { dataUrlToImageInput, type ImageInput } from "@/lib/ai/images";
+import { parsePiecePayloads } from "@/lib/ai/pieces";
 import { resolveStyle } from "@/lib/ai/styles";
 import { styleProfileToText } from "@/lib/ai/style-profile";
 import { designBriefSchema } from "@/lib/ai/schemas";
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
       roomImage,
       styleReferences = [],
       styleId,
+      pieceReferences: pieceReferencesRaw = [],
       qualityGate = true,
       stream,
     } = body;
@@ -42,6 +44,15 @@ export async function POST(request: Request) {
     }
 
     const roomImageInput = dataUrlToImageInput(roomImage);
+
+    let pieceReferences;
+    try {
+      pieceReferences = parsePiecePayloads(pieceReferencesRaw);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Invalid piece references";
+      return apiError(message, 400);
+    }
 
     // A saved style (styleId) supplies both its images and its text profile;
     // otherwise fall back to one-off data-URL references from the client.
@@ -72,6 +83,7 @@ export async function POST(request: Request) {
         instruction,
         roomImage: roomImageInput,
         styleReferences: styleRefInputs,
+        pieceReferences,
       });
 
       if (qualityGate) {
@@ -91,6 +103,7 @@ export async function POST(request: Request) {
             ),
             roomImage: roomImageInput,
             styleReferences: styleRefInputs,
+            pieceReferences,
             currentRender: result.image,
           });
         }

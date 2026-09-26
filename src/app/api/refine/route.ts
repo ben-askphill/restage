@@ -6,6 +6,7 @@ import {
   urlToImageInput,
   type ImageInput,
 } from "@/lib/ai/images";
+import { parsePiecePayloads } from "@/lib/ai/pieces";
 import { resolveStyle } from "@/lib/ai/styles";
 import { designBriefSchema } from "@/lib/ai/schemas";
 import {
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
       instruction,
       styleReferences = [],
       styleId,
+      pieceReferences: pieceReferencesRaw = [],
       qualityGate = true,
       stream,
     } = body;
@@ -51,6 +53,15 @@ export async function POST(request: Request) {
 
     const roomImageInput = dataUrlToImageInput(roomImage);
     const currentRender = await urlToImageInput(currentRenderUrl);
+
+    let pieceReferences;
+    try {
+      pieceReferences = parsePiecePayloads(pieceReferencesRaw);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Invalid piece references";
+      return apiError(message, 400);
+    }
 
     let styleRefInputs: ImageInput[];
     if (typeof styleId === "string" && styleId) {
@@ -72,6 +83,7 @@ export async function POST(request: Request) {
         instruction: refineInstruction,
         roomImage: roomImageInput,
         styleReferences: styleRefInputs,
+        pieceReferences,
         currentRender,
       });
 
@@ -92,6 +104,7 @@ export async function POST(request: Request) {
             ),
             roomImage: roomImageInput,
             styleReferences: styleRefInputs,
+            pieceReferences,
             currentRender: result.image,
           });
         }

@@ -5,6 +5,7 @@
 ## Features
 
 - Upload a room photo (+ optional style references and floor plan)
+- Upload photos of specific pieces (sofa, lamp, rug, …) to **replace** an existing item or **add** that object to the redesign
 - Structured design brief with room analysis
 - AI-powered re-decoration that preserves architecture
 - Before/after comparison slider
@@ -73,9 +74,10 @@ Set the environment variables in your Vercel project settings. API routes use th
 
 | Module | Purpose |
 |--------|---------|
-| `analyze.ts` | Room photo + brief → structured Design Brief |
+| `analyze.ts` | Room photo + brief → structured room inventory |
+| `plan.ts` | Inventory + keep list + optional piece photos → design strategy |
 | `prompt.ts` | Design Brief → image instruction template |
-| `render.ts` | Image instruction + photos → rendered image (Blob URL) |
+| `render.ts` | Image instruction + room, style, and piece photos → rendered image (Blob URL) |
 | `shopping.ts` | Design Brief + render → shopping list |
 | `critique.ts` | Quality gate against Non-Negotiable Rules |
 
@@ -83,8 +85,9 @@ Set the environment variables in your Vercel project settings. API routes use th
 
 | Route | Input | Output |
 |-------|-------|--------|
-| `POST /api/analyze` | Room images, optional floor plan, user brief | Design Brief JSON |
-| `POST /api/render` | Design Brief, room photo, style refs | Render Blob URL |
+| `POST /api/analyze` | Room images, optional floor plan, user brief | Room inventory JSON |
+| `POST /api/plan` | Inventory, keep list, room photo, optional `styleId` and `pieceReferences` | Design Brief JSON |
+| `POST /api/render` | Design Brief, room photo, style refs or `styleId`, optional `pieceReferences` | Render Blob URL |
 | `POST /api/shopping-list` | Design Brief, render URL | Shopping List JSON |
 | `POST /api/refine` | Current render, brief, instruction | Updated render |
 | `GET /api/styles` | — | Saved style folder summaries |
@@ -92,6 +95,13 @@ Set the environment variables in your Vercel project settings. API routes use th
 | `POST /api/styles/[id]/images` | `multipart/form-data` field `images` (files) | Append inspiration images; profile derivation is best-effort |
 
 All JSON AI routes support `stream: true` for SSE progress updates. Style image uploads send the same flag as a form field.
+
+### Piece references (replace vs add)
+
+Object-level photos of a specific sofa, lamp, rug, etc. — not saved style folders. Each piece is prepared in the browser (same JPEG resize as other uploads) and sent as a data URL on plan/render/refine, like one-off style references.
+
+- **Replace** swaps a named item already in the room for the photographed object (that item is removed from the keep list).
+- **Add** places the photographed object in the redesign without removing something else.
 
 ### My Styles uploads
 
