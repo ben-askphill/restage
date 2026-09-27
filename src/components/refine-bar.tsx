@@ -17,9 +17,11 @@ const REFINE_CHIPS = [
 type RefineBarProps = {
   onRefine: (instruction: string) => Promise<void>;
   disabled?: boolean;
+  /** Refine can run with an empty field when pin notes already describe the change. */
+  allowEmpty?: boolean;
 };
 
-export function RefineBar({ onRefine, disabled }: RefineBarProps) {
+export function RefineBar({ onRefine, disabled, allowEmpty = false }: RefineBarProps) {
   const [instruction, setInstruction] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -67,7 +69,7 @@ export function RefineBar({ onRefine, disabled }: RefineBarProps) {
           />
           <Button
             type="submit"
-            disabled={disabled || loading || !instruction.trim()}
+            disabled={disabled || loading || (!instruction.trim() && !allowEmpty)}
             className="h-12 rounded-full px-6 text-[15px] font-bold"
           >
             {loading ? (

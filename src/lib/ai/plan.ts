@@ -60,10 +60,10 @@ ${pieceBlock}
 Room inventory:
 ${JSON.stringify(inventory, null, 2)}
 
-Style: ${inventory.constraintsFromUser.style}
+Style: ${inventory.constraintsFromUser.style.trim() || "not specified"}
 Budget: ${inventory.constraintsFromUser.budgetTier}
 Region: ${inventory.constraintsFromUser.region}
-Use: ${inventory.constraintsFromUser.function}${
+Use: ${inventory.constraintsFromUser.function.trim() || "not specified"}${
         input.styleProfile
           ? `
 

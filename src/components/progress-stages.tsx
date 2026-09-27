@@ -3,70 +3,97 @@
 import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STAGES = [
-  { id: "analyze", label: "Analyzing room" },
-  { id: "design", label: "Designing" },
-  { id: "render", label: "Rendering" },
-  { id: "shop", label: "Sourcing furniture" },
+export const FLOW_STAGES = [
+  { id: "space", label: "Upload" },
+  { id: "pieces", label: "Pieces" },
+  { id: "style", label: "Style" },
+  { id: "render", label: "Render" },
+  { id: "source", label: "Source" },
 ] as const;
 
-export type StageId = (typeof STAGES)[number]["id"];
+export type FlowStageId = (typeof FLOW_STAGES)[number]["id"];
 
 type ProgressStagesProps = {
-  currentStage: StageId | null;
-  completedStages: StageId[];
+  viewed: FlowStageId;
+  completed: FlowStageId[];
+  available: FlowStageId[];
+  busyStage?: FlowStageId | null;
+  locked?: boolean;
   statusText?: string;
+  onSelect: (stage: FlowStageId) => void;
 };
 
 export function ProgressStages({
-  currentStage,
-  completedStages,
+  viewed,
+  completed,
+  available,
+  busyStage = null,
+  locked = false,
   statusText,
+  onSelect,
 }: ProgressStagesProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
-        {STAGES.map((stage, index) => {
-          const isComplete = completedStages.includes(stage.id);
-          const isCurrent = currentStage === stage.id;
-          const isPending = !isComplete && !isCurrent;
+    <div className="space-y-3">
+      <nav aria-label="Restage progress" className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
+        <ol className="flex w-max items-center gap-x-5 sm:w-auto sm:flex-wrap sm:justify-center sm:gap-x-7 sm:gap-y-3">
+          {FLOW_STAGES.map((stage, index) => {
+            const isComplete = completed.includes(stage.id);
+            const isViewed = viewed === stage.id;
+            const isBusy = busyStage === stage.id;
+            const isAvailable = available.includes(stage.id);
+            const isPending = !isComplete && !isViewed && !isBusy;
 
-          return (
-            <div key={stage.id} className="flex items-center gap-2.5">
-              <div
-                className={cn(
-                  "flex size-8 items-center justify-center rounded-full text-[13px] font-bold",
-                  isComplete && "bg-primary text-primary-foreground",
-                  isCurrent && "border-2 border-primary text-primary",
-                  isPending && "border-2 border-[#ddd5cc] text-faint",
-                )}
-              >
-                {isComplete ? (
-                  <Check className="size-[15px]" strokeWidth={3} />
-                ) : isCurrent ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <span>{index + 1}</span>
-                )}
-              </div>
-              <span
-                className={cn(
-                  "text-[15px]",
-                  isComplete || isCurrent ? "font-bold" : "font-medium",
-                  isPending && "text-faint",
-                )}
-              >
-                {stage.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {statusText && (
+            return (
+              <li key={stage.id}>
+                <button
+                  type="button"
+                  aria-current={isViewed ? "step" : undefined}
+                  disabled={!isAvailable || locked}
+                  onClick={() => onSelect(stage.id)}
+                  className="flex items-center gap-2.5 rounded-full py-1 disabled:cursor-not-allowed"
+                >
+                  <span
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-full text-[13px] font-bold",
+                      isComplete && "bg-primary text-primary-foreground",
+                      (isViewed || isBusy) &&
+                        !isComplete &&
+                        "border-2 border-primary text-primary",
+                      isViewed && isComplete && "ring-2 ring-primary ring-offset-2",
+                      isPending && "border-2 border-[#ddd5cc] text-faint",
+                    )}
+                  >
+                    {isBusy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : isComplete ? (
+                      <Check className="size-[15px]" strokeWidth={3} />
+                    ) : (
+                      <span>{index + 1}</span>
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[15px]",
+                      isComplete || isViewed || isBusy
+                        ? "font-bold"
+                        : "font-medium",
+                      isPending && "text-faint",
+                      !isAvailable && "text-faint",
+                    )}
+                  >
+                    {stage.label}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+      {statusText ? (
         <p className="animate-pulse text-center text-sm font-medium text-muted-foreground">
           {statusText}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }
