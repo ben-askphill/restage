@@ -24,10 +24,8 @@ export const pieceReferenceSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   intent: pieceIntentSchema,
-  /** Existing furniture item this photo should replace. Used when intent is "replace". */
+  /** Existing furniture item this photo should replace. Required in the product when intent is "replace". */
   replaces: z.string().optional(),
-  /** Existing furniture item an added piece should be placed with. Used when intent is "add". */
-  alongside: z.string().optional(),
 });
 
 export type PieceReference = z.infer<typeof pieceReferenceSchema>;

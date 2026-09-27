@@ -25,7 +25,6 @@ export type PieceDraft = {
   label: string;
   intent: PieceIntent;
   replaces: string;
-  alongside: string;
 };
 
 type PiecePickerProps = {
@@ -45,22 +44,15 @@ function newDraft(file: File): PieceDraft {
     label: labelFromFilename(file.name),
     intent: "add",
     replaces: "",
-    alongside: "",
   };
 }
 
-function targetCopy(intent: PieceIntent): { label: string; placeholder: string } {
+function needsAnalyzedTarget(intent: PieceIntent): boolean {
   switch (intent) {
     case "replace":
-      return {
-        label: "Replace which item?",
-        placeholder: "Choose an item found in the room",
-      };
+      return true;
     case "add":
-      return {
-        label: "Add with which item?",
-        placeholder: "Choose an item found in the room",
-      };
+      return false;
     default: {
       const _exhaustive: never = intent;
       throw new Error(`Unhandled piece intent: ${_exhaustive}`);
@@ -79,17 +71,15 @@ function FurnitureTarget({
   disabled: boolean;
   onSelect: (value: string) => void;
 }) {
-  const copy = targetCopy(piece.intent);
-  const selected = piece.intent === "replace" ? piece.replaces : piece.alongside;
   const fieldId = `piece-target-${piece.id}`;
 
   return (
     <div className="space-y-1.5">
       <Label htmlFor={fieldId} className="text-[13px] font-bold">
-        {copy.label}
+        Replace which item?
       </Label>
       <Select
-        value={selected || undefined}
+        value={piece.replaces || undefined}
         onValueChange={(value) => {
           if (value) onSelect(value);
         }}
@@ -99,7 +89,7 @@ function FurnitureTarget({
           id={fieldId}
           className="h-11 w-full rounded-full border-transparent bg-muted px-4 text-[15px] font-medium"
         >
-          <SelectValue placeholder={copy.placeholder} />
+          <SelectValue placeholder="Choose an item found in the room" />
         </SelectTrigger>
         <SelectContent>
           {furniture.map((item, itemIndex) => (
@@ -222,7 +212,7 @@ export function PiecePicker({
           case "add":
             return { ...piece, intent, replaces: "" };
           case "replace":
-            return { ...piece, intent, alongside: "" };
+            return { ...piece, intent };
           default: {
             const _exhaustive: never = intent;
             throw new Error(`Unhandled piece intent: ${_exhaustive}`);
@@ -239,7 +229,7 @@ export function PiecePicker({
           <p className="text-[17px] font-bold">Your pieces</p>
           <p className="text-sm font-medium text-muted-foreground">
             {intro ??
-              "Upload furniture, lighting, rugs, or other items. Replace and Add both choose an item found after the room was analyzed. This is not a style folder."}
+              "Upload furniture, lighting, rugs, or other items. Add places the piece in the room. Replace swaps an item found after the room was analyzed. This is not a style folder."}
           </p>
         </div>
       ) : null}
@@ -339,25 +329,14 @@ export function PiecePicker({
                     className="h-11 rounded-full border-transparent bg-muted px-4 text-[15px] font-medium placeholder:text-faint"
                   />
                 </div>
-                <FurnitureTarget
-                  piece={piece}
-                  furniture={furniture}
-                  disabled={disabled}
-                  onSelect={(value) => {
-                    switch (piece.intent) {
-                      case "replace":
-                        update(piece.id, { replaces: value });
-                        return;
-                      case "add":
-                        update(piece.id, { alongside: value });
-                        return;
-                      default: {
-                        const _exhaustive: never = piece.intent;
-                        throw new Error(`Unhandled piece intent: ${_exhaustive}`);
-                      }
-                    }
-                  }}
-                />
+                {needsAnalyzedTarget(piece.intent) ? (
+                  <FurnitureTarget
+                    piece={piece}
+                    furniture={furniture}
+                    disabled={disabled}
+                    onSelect={(value) => update(piece.id, { replaces: value })}
+                  />
+                ) : null}
               </div>
             </li>
           ))}

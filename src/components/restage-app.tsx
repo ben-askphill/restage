@@ -80,7 +80,6 @@ function draftsToMetas(pieces: PieceDraft[]): PieceReference[] {
           id: piece.id,
           label,
           intent: piece.intent,
-          alongside: piece.alongside.trim(),
         };
       default: {
         const _exhaustive: never = piece.intent;
@@ -109,9 +108,7 @@ function pieceChipLabel(piece: PieceReference): string {
         ? `Replaces ${piece.replaces}: ${piece.label}`
         : `Replace with ${piece.label}`;
     case "add":
-      return piece.alongside
-        ? `Add with ${piece.alongside}: ${piece.label}`
-        : `Add: ${piece.label}`;
+      return `Add: ${piece.label}`;
     default: {
       const _exhaustive: never = piece.intent;
       return `${describePieceIntent(_exhaustive)}: ${piece.label}`;
@@ -129,7 +126,7 @@ function hotswapInstruction(pieces: PieceDraft[]): string {
       case "replace":
         return `Replace "${piece.replaces}" with the uploaded "${label}".`;
       case "add":
-        return `Add the uploaded "${label}" with the existing "${piece.alongside}".`;
+        return `Add the uploaded "${label}" as a new object in the room.`;
       default: {
         const _exhaustive: never = piece.intent;
         throw new Error(`Unhandled piece intent: ${_exhaustive}`);
@@ -281,7 +278,7 @@ export function RestageApp() {
     setActivity(null);
     setBrief((current) => ({ ...current, keepItems: [] }));
     setPieces((current) =>
-      current.map((piece) => ({ ...piece, replaces: "", alongside: "" })),
+      current.map((piece) => ({ ...piece, replaces: "" })),
     );
   };
 
@@ -371,7 +368,7 @@ export function RestageApp() {
       setInventory(analyzed);
       setBrief((current) => ({ ...current, keepItems: [] }));
       setPieces((current) =>
-        current.map((piece) => ({ ...piece, replaces: "", alongside: "" })),
+        current.map((piece) => ({ ...piece, replaces: "" })),
       );
       setStep("pieces");
       setStatusText("");
@@ -824,7 +821,8 @@ export function RestageApp() {
                     </h1>
                     <p className="font-medium text-muted-foreground">
                       Upload extra furniture, lighting, rugs, or other pieces.
-                      Replace and Add choose from what was found in the room.
+                      Add places a piece in the room. Replace swaps an item
+                      found in the analysis.
                     </p>
                   </div>
                   <PiecePicker
@@ -1085,8 +1083,9 @@ export function RestageApp() {
                       Swap a piece
                     </h3>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Upload different furniture or change a replace/add choice.
-                      Applying it updates this render in place.
+                      Upload different furniture, or switch between Add and Replace.
+                      Add needs no existing item. Applying it updates this
+                      render in place.
                     </p>
                   </div>
                   <PiecePicker
