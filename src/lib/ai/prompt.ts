@@ -17,7 +17,7 @@ function roomUsePhrase(roomUse: string): string {
 function keepConstraintBlock(brief: DesignBrief): string {
   const kept = keptFurniture(brief);
   if (kept.length === 0 && brief.constraintsFromUser.keepItems.length === 0) {
-    return "KEEP LIST: none. Movable furniture may be replaced.";
+    return "KEEP LIST: none. Movable furniture and ceiling lighting fixtures (chandeliers, flush mounts, pendants, and similar) may be replaced.";
   }
 
   const lines = (
@@ -100,8 +100,10 @@ NEW furniture to real human proportions and keep walkways clear (≥75cm main pa
 oversized, undersized, or floating. Keep-list pieces stay the size they already are.
 
 LIGHTING: preserve the real light — ${lighting.dominantDirection}, ${lighting.mood}.
-Shadows must fall consistently away from ${naturalSources}. One time of day. Add tasteful
-ambient/task/accent lighting only where plausibly placed and powered.
+Shadows must fall consistently away from ${naturalSources}. One time of day.
+Ceiling light fixtures are replaceable decor, not architecture. Replace any chandelier,
+flush mount, pendant, or similar fixture that is not on the keep list. Copy kept ceiling
+fixtures exactly. Add tasteful ambient/task/accent lighting only where plausibly placed and powered.
 
 STYLE REFERENCES (labeled style images only, if any): borrow ONLY their mood, color story,
 materials and finish level. Do NOT copy their room, their layout, or their specific

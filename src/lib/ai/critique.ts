@@ -36,7 +36,7 @@ Check:
 - Any blocked radiator/outlet/door swing?
 - Scale plausible vs the door/ceiling?
 - Lighting consistent with the original?
-- Keep-list items intact, in place, and recognizably the same object from the original photo? If a keep-list sofa/couch/sectional was replaced, this is a critical fail.
+- Keep-list items intact, in place, and recognizably the same object from the original photo? If a keep-list sofa, ceiling fixture, or other kept object was replaced, this is a critical fail.
 - User-specified piece photos honored? REPLACE targets actually gone and the photographed object present? ADD pieces actually in the room, not used as a swap? If a specified piece is missing or swapped for a generic stand-in, this is a critical fail.
 - Style-ref mood present without copying layout?
 - Any AI-staging clichés or material honesty issues?
