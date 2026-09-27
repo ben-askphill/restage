@@ -1,11 +1,12 @@
 import { generateText } from "ai";
+import { uploadRender } from "@/lib/blob";
+import { DEFAULT_IMAGE_QUALITY } from "@/lib/env";
+import { resolveRenderFrame, type SupportedAspectRatio } from "./aspect-ratio";
 import { getImageModel } from "./gateway";
 import { toFilePart, type ImageInput } from "./images";
 import { normalizeImageForGeneration } from "./normalize-image";
 import { formatPieceLine, pieceConstraintBlock } from "./piece-meta";
 import type { PieceWithImage } from "./pieces";
-import { uploadRender } from "@/lib/blob";
-import { DEFAULT_IMAGE_QUALITY, DEFAULT_IMAGE_SIZE } from "@/lib/env";
 
 export type RenderInput = {
   instruction: string;
@@ -55,21 +56,9 @@ function imageSizeForQuality(quality: string): GeminiImageSize {
   }
 }
 
-function aspectRatioForSize(size: string): "3:2" | "2:3" | "1:1" | undefined {
-  switch (size) {
-    case "1536x1024":
-      return "3:2";
-    case "1024x1536":
-      return "2:3";
-    case "1024x1024":
-      return "1:1";
-    default:
-      return undefined;
-  }
-}
-
 async function generateRoomImage(
   content: PromptPart[],
+  aspectRatio: SupportedAspectRatio,
 ): Promise<GeneratedImageFile> {
   const parts: PromptPart[] = [];
   for (const part of content) {
@@ -85,7 +74,6 @@ async function generateRoomImage(
     });
   }
 
-  const aspectRatio = aspectRatioForSize(DEFAULT_IMAGE_SIZE);
   const result = await generateText({
     model: getImageModel(),
     messages: [{ role: "user", content: parts }],
@@ -94,7 +82,7 @@ async function generateRoomImage(
         responseModalities: ["TEXT", "IMAGE"],
         imageConfig: {
           imageSize: imageSizeForQuality(DEFAULT_IMAGE_QUALITY),
-          ...(aspectRatio ? { aspectRatio } : {}),
+          aspectRatio,
         },
       },
     },
@@ -119,6 +107,7 @@ export async function renderRoom(input: RenderInput): Promise<RenderOutput> {
     currentRender,
   } = input;
 
+  const frame = await resolveRenderFrame(roomImage);
   const content: PromptPart[] = [{ type: "text", text: instruction }];
 
   if (currentRender) {
@@ -161,7 +150,12 @@ export async function renderRoom(input: RenderInput): Promise<RenderOutput> {
     }
   }
 
-  const imageFile = await generateRoomImage(content);
+  content.push({
+    type: "text",
+    text: `OUTPUT ASPECT RATIO ${frame.aspectRatio}, measured from the room photograph. Keep this exact frame. Do not letterbox, crop, or switch to another ratio.`,
+  });
+
+  const imageFile = await generateRoomImage(content, frame.aspectRatio);
   const mediaType = imageFile.mediaType?.startsWith("image/")
     ? imageFile.mediaType
     : "image/png";

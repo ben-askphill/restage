@@ -118,7 +118,7 @@ export function GalleryLibrary({
               <img
                 src={entry.url}
                 alt={`${entry.roomType} generation`}
-                className="aspect-[3/2] w-full object-cover"
+                className="w-full bg-muted"
               />
               <div className="flex flex-col gap-3 p-4">
                 <div className="space-y-1">

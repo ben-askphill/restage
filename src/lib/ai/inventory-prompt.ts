@@ -19,6 +19,7 @@ ${hasFloorPlan ? "A floor plan image is also provided — prefer its dimensions 
 
 Rules:
 - Be specific about camera angle and aspect ratio (later renders must match this photo exactly).
+- aspectRatio is the room photograph's frame as width:height, for example 3:4 or 16:9. Use the room photo, not the floor plan.
 - Never invent architecture that is not visible.
 - If dimensions are estimated, set confidence honestly and note the reference used.
 - Copy style, budgetTier, region, and function into constraintsFromUser. Set keepItems to [].

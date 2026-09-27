@@ -1,4 +1,5 @@
 import { generateObject } from "ai";
+import { aspectRatioForRoomPhoto } from "./aspect-ratio";
 import { promoteCeilingFixtures } from "./ceiling-fixtures";
 import { DESIGNER_SYSTEM_PROMPT } from "./constants";
 import { getDesignerModel } from "./gateway";
@@ -18,6 +19,10 @@ export type AnalyzeInput = {
 
 export async function analyzeRoom(input: AnalyzeInput): Promise<RoomInventory> {
   const { roomImages, floorPlan, userBrief } = input;
+  const roomPhoto = roomImages[0];
+  if (!roomPhoto) {
+    throw new Error("At least one room image is required");
+  }
 
   const content: Array<
     | { type: "text"; text: string }
@@ -44,15 +49,19 @@ export async function analyzeRoom(input: AnalyzeInput): Promise<RoomInventory> {
     content.push(toFilePart(floorPlan));
   }
 
-  const result = await generateObject({
-    model: getDesignerModel(),
-    schema: roomInventorySchema,
-    system: DESIGNER_SYSTEM_PROMPT,
-    messages: [{ role: "user", content }],
-  });
+  const [result, aspectRatio] = await Promise.all([
+    generateObject({
+      model: getDesignerModel(),
+      schema: roomInventorySchema,
+      system: DESIGNER_SYSTEM_PROMPT,
+      messages: [{ role: "user", content }],
+    }),
+    aspectRatioForRoomPhoto(roomPhoto),
+  ]);
 
   return promoteCeilingFixtures({
     ...result.object,
+    aspectRatio,
     existingFurniture: result.object.existingFurniture.map((piece) => ({
       ...piece,
       keep: false,

@@ -1,3 +1,4 @@
+import { withRoomPhotoAspectRatio } from "@/lib/ai/aspect-ratio";
 import { assembleImageInstruction, assembleRefineInstruction } from "@/lib/ai/prompt";
 import { renderRoom, toClientRenderResult } from "@/lib/ai/render";
 import { critiqueRender } from "@/lib/ai/critique";
@@ -44,6 +45,10 @@ export async function POST(request: Request) {
     }
 
     const roomImageInput = dataUrlToImageInput(roomImage);
+    const brief = await withRoomPhotoAspectRatio(
+      parsedBrief.data,
+      roomImageInput,
+    );
 
     let pieceReferences;
     try {
@@ -70,10 +75,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const instruction = assembleImageInstruction(
-      parsedBrief.data,
-      styleProfileText,
-    );
+    const instruction = assembleImageInstruction(brief, styleProfileText);
 
     const runRender = async (send?: (status: string) => void) => {
       send?.("Assembling image instruction…");
@@ -89,7 +91,7 @@ export async function POST(request: Request) {
       if (qualityGate) {
         send?.("Running quality check…");
         const critique = await critiqueRender({
-          brief: parsedBrief.data,
+          brief,
           renderImage: result.image,
           roomImage: roomImageInput,
         });
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
           send?.("Auto-refining based on quality check…");
           result = await renderRoom({
             instruction: assembleRefineInstruction(
-              parsedBrief.data,
+              brief,
               critique.correctiveInstruction,
             ),
             roomImage: roomImageInput,
