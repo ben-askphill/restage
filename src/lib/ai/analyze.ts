@@ -27,10 +27,10 @@ export async function analyzeRoom(input: AnalyzeInput): Promise<RoomInventory> {
 
 User context (for room type and constraints only — do not decide what to keep):
 - Room type: ${userBrief.roomType}
-- Style direction: ${userBrief.style}
+- Style direction: ${userBrief.style.trim() || "not specified yet"}
 - Budget tier: ${userBrief.budgetTier}
 - Region: ${userBrief.region}
-- How the room is used: ${userBrief.function}
+- How the room is used: ${userBrief.function.trim() || "not specified yet"}
 
 ${floorPlan ? "A floor plan image is also provided — prefer its dimensions and door/window positions over photo estimates." : "No floor plan provided — estimate dimensions from the photo using standard references (interior door ≈ 2.0m tall)."}
 

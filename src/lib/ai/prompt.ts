@@ -2,6 +2,18 @@ import { keptFurniture } from "./keep";
 import { pieceConstraintBlock } from "./piece-meta";
 import type { DesignBrief } from "./schemas";
 
+function stylePhrase(style: string): string {
+  const trimmed = style.trim();
+  return trimmed.length > 0
+    ? trimmed
+    : "the saved style or references when present, otherwise a calm cohesive direction";
+}
+
+function roomUsePhrase(roomUse: string): string {
+  const trimmed = roomUse.trim();
+  return trimmed.length > 0 ? `used for ${trimmed}` : "with no specific use given";
+}
+
 function keepConstraintBlock(brief: DesignBrief): string {
   const kept = keptFurniture(brief);
   if (kept.length === 0 && brief.constraintsFromUser.keepItems.length === 0) {
@@ -78,7 +90,7 @@ PRESERVE EXACTLY (do not alter): ${architectureSummary}; and these fixed element
 
 ${keepConstraintBlock(brief)}
 ${pieceBlock(brief)}
-REDESIGN in this direction: ${constraintsFromUser.style}, for a ${roomType} used for ${constraintsFromUser.function}.
+REDESIGN in this direction: ${stylePhrase(constraintsFromUser.style)}, for a ${roomType} ${roomUsePhrase(constraintsFromUser.function)}.
 Layout: ${designStrategy.layoutConcept}. Focal point: ${designStrategy.focalPoint}.
 Palette: ${designStrategy.palette.join(", ")}. Materials: ${designStrategy.materials.join(", ")}.
 New furniture should look like real, buyable ${constraintsFromUser.budgetTier}-tier pieces available in ${constraintsFromUser.region}.
@@ -120,7 +132,7 @@ export function assembleRefineInstruction(
 
 Edit the FIRST input image (the current redesign) in place.
 Keep the same room, architecture, camera, and aspect ratio (${brief.aspectRatio}).
-Style remains ${brief.constraintsFromUser.style}. Region: ${brief.constraintsFromUser.region}.
+Style remains ${stylePhrase(brief.constraintsFromUser.style)}. Region: ${brief.constraintsFromUser.region}.
 
 ${keepConstraintBlock(brief)}
 ${pieceBlock(brief)}

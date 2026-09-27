@@ -4,11 +4,13 @@ export const budgetTierSchema = z.enum(["budget", "mid", "premium"]);
 
 export const userBriefInputSchema = z.object({
   roomType: z.string().min(1),
-  style: z.string().min(1),
+  /** Optional. A saved style folder can stand in for a written direction. */
+  style: z.string(),
   budgetTier: budgetTierSchema,
   region: z.string().min(1),
   keepItems: z.array(z.string()).default([]),
-  function: z.string().min(1),
+  /** Optional description of how the room is used. */
+  function: z.string(),
 });
 
 export type UserBriefInput = z.infer<typeof userBriefInputSchema>;
@@ -24,6 +26,8 @@ export const pieceReferenceSchema = z.object({
   intent: pieceIntentSchema,
   /** Existing furniture item this photo should replace. Used when intent is "replace". */
   replaces: z.string().optional(),
+  /** Existing furniture item an added piece should be placed with. Used when intent is "add". */
+  alongside: z.string().optional(),
 });
 
 export type PieceReference = z.infer<typeof pieceReferenceSchema>;

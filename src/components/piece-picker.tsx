@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { itemsMatch } from "@/lib/ai/keep";
 import {
   labelFromFilename,
   MAX_PIECE_REFERENCES,
@@ -26,6 +25,7 @@ export type PieceDraft = {
   label: string;
   intent: PieceIntent;
   replaces: string;
+  alongside: string;
 };
 
 type PiecePickerProps = {
@@ -33,6 +33,8 @@ type PiecePickerProps = {
   onChange: (pieces: PieceDraft[]) => void;
   furniture?: ExistingFurnitureItem[];
   disabled?: boolean;
+  /** Replaces the default explanation. Pass null to hide it. */
+  intro?: string | null;
 };
 
 function newDraft(file: File): PieceDraft {
@@ -43,7 +45,77 @@ function newDraft(file: File): PieceDraft {
     label: labelFromFilename(file.name),
     intent: "add",
     replaces: "",
+    alongside: "",
   };
+}
+
+function targetCopy(intent: PieceIntent): { label: string; placeholder: string } {
+  switch (intent) {
+    case "replace":
+      return {
+        label: "Replace which item?",
+        placeholder: "Choose an item found in the room",
+      };
+    case "add":
+      return {
+        label: "Add with which item?",
+        placeholder: "Choose an item found in the room",
+      };
+    default: {
+      const _exhaustive: never = intent;
+      throw new Error(`Unhandled piece intent: ${_exhaustive}`);
+    }
+  }
+}
+
+function FurnitureTarget({
+  piece,
+  furniture,
+  disabled,
+  onSelect,
+}: {
+  piece: PieceDraft;
+  furniture: ExistingFurnitureItem[];
+  disabled: boolean;
+  onSelect: (value: string) => void;
+}) {
+  const copy = targetCopy(piece.intent);
+  const selected = piece.intent === "replace" ? piece.replaces : piece.alongside;
+  const fieldId = `piece-target-${piece.id}`;
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={fieldId} className="text-[13px] font-bold">
+        {copy.label}
+      </Label>
+      <Select
+        value={selected || undefined}
+        onValueChange={(value) => {
+          if (value) onSelect(value);
+        }}
+        disabled={disabled || furniture.length === 0}
+      >
+        <SelectTrigger
+          id={fieldId}
+          className="h-11 w-full rounded-full border-transparent bg-muted px-4 text-[15px] font-medium"
+        >
+          <SelectValue placeholder={copy.placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {furniture.map((item, itemIndex) => (
+            <SelectItem key={`${item.item}-${itemIndex}`} value={item.item}>
+              {item.item}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {furniture.length === 0 ? (
+        <p className="text-[12px] text-muted-foreground">
+          No items were found in this room to choose from.
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 function IntentToggle({
@@ -97,8 +169,10 @@ export function PiecePicker({
   onChange,
   furniture = [],
   disabled = false,
+  intro,
 }: PiecePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const recentUpload = useRef("");
   const [dragging, setDragging] = useState(false);
   const remaining = MAX_PIECE_REFERENCES - pieces.length;
   const canAdd = remaining > 0 && !disabled;
@@ -112,6 +186,14 @@ export function PiecePicker({
           /\.(heic|heif|jpe?g|png|webp|gif)$/i.test(file.name),
       );
       if (images.length === 0) return;
+      const signature = images
+        .map((file) => `${file.name}:${file.size}:${file.lastModified}`)
+        .join("|");
+      if (signature === recentUpload.current) return;
+      recentUpload.current = signature;
+      window.setTimeout(() => {
+        if (recentUpload.current === signature) recentUpload.current = "";
+      }, 300);
       const next = images.slice(0, remaining).map(newDraft);
       onChange([...pieces, ...next]);
     },
@@ -140,7 +222,7 @@ export function PiecePicker({
           case "add":
             return { ...piece, intent, replaces: "" };
           case "replace":
-            return { ...piece, intent };
+            return { ...piece, intent, alongside: "" };
           default: {
             const _exhaustive: never = intent;
             throw new Error(`Unhandled piece intent: ${_exhaustive}`);
@@ -152,15 +234,15 @@ export function PiecePicker({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <p className="text-[17px] font-bold">Your pieces</p>
-        <p className="text-sm font-medium text-muted-foreground">
-          Upload a sofa, lamp, rug, or other item. Choose{" "}
-          <span className="text-foreground">Replace</span> to swap something
-          already in the room, or <span className="text-foreground">Add</span>{" "}
-          to place it as a new piece. This is not a style folder.
-        </p>
-      </div>
+      {intro !== null ? (
+        <div className="space-y-1.5">
+          <p className="text-[17px] font-bold">Your pieces</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {intro ??
+              "Upload furniture, lighting, rugs, or other items. Replace and Add both choose an item found after the room was analyzed. This is not a style folder."}
+          </p>
+        </div>
+      ) : null}
 
       <div
         onDragOver={(event) => {
@@ -257,66 +339,25 @@ export function PiecePicker({
                     className="h-11 rounded-full border-transparent bg-muted px-4 text-[15px] font-medium placeholder:text-faint"
                   />
                 </div>
-                {piece.intent === "replace" ? (
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor={`piece-replaces-${piece.id}`}
-                      className="text-[13px] font-bold"
-                    >
-                      Replace which item?
-                    </Label>
-                    {furniture.length > 0 ? (
-                      <Select
-                        value={piece.replaces || undefined}
-                        onValueChange={(value) => {
-                          if (value) update(piece.id, { replaces: value });
-                        }}
-                        disabled={disabled}
-                      >
-                        <SelectTrigger
-                          id={`piece-replaces-${piece.id}`}
-                          className="h-11 w-full rounded-full border-transparent bg-muted px-4 text-[15px] font-medium"
-                        >
-                          <SelectValue placeholder="Choose an item in the room" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {furniture.map((item, itemIndex) => (
-                            <SelectItem
-                              key={`${item.item}-${itemIndex}`}
-                              value={item.item}
-                            >
-                              {item.item}
-                            </SelectItem>
-                          ))}
-                          {piece.replaces.trim() &&
-                          !furniture.some((item) =>
-                            itemsMatch(item.item, piece.replaces),
-                          ) ? (
-                            <SelectItem value={piece.replaces.trim()}>
-                              {piece.replaces.trim()}
-                            </SelectItem>
-                          ) : null}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        id={`piece-replaces-${piece.id}`}
-                        value={piece.replaces}
-                        onChange={(event) =>
-                          update(piece.id, { replaces: event.target.value })
-                        }
-                        placeholder="e.g. grey sofa, current rug"
-                        disabled={disabled}
-                        className="h-11 rounded-full border-transparent bg-muted px-4 text-[15px] font-medium placeholder:text-faint"
-                      />
-                    )}
-                    {furniture.length === 0 ? (
-                      <p className="text-[12px] text-muted-foreground">
-                        Analyze the room first to pick from detected furniture.
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
+                <FurnitureTarget
+                  piece={piece}
+                  furniture={furniture}
+                  disabled={disabled}
+                  onSelect={(value) => {
+                    switch (piece.intent) {
+                      case "replace":
+                        update(piece.id, { replaces: value });
+                        return;
+                      case "add":
+                        update(piece.id, { alongside: value });
+                        return;
+                      default: {
+                        const _exhaustive: never = piece.intent;
+                        throw new Error(`Unhandled piece intent: ${_exhaustive}`);
+                      }
+                    }
+                  }}
+                />
               </div>
             </li>
           ))}

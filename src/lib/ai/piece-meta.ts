@@ -35,13 +35,61 @@ export function formatPieceLine(piece: PieceReference, index: number): string {
         ? `${n}. REPLACE — photograph of "${name}" must replace "${target}". Remove "${target}" (do not keep, restyle, or leave it in place) and install this exact object in a suitable position.`
         : `${n}. REPLACE — photograph of "${name}" must replace the closest matching existing piece. Remove that current piece; do not keep both.`;
     }
-    case "add":
-      return `${n}. ADD — photograph of "${name}" must appear as a new object in the room. Do not use it as a swap for an existing piece; place it in addition to the rest of the redesign.`;
+    case "add": {
+      const near = piece.alongside?.trim();
+      return near
+        ? `${n}. ADD — photograph of "${name}" must appear as a new object placed with the existing "${near}". Do not remove "${near}"; add this exact object in addition to it.`
+        : `${n}. ADD — photograph of "${name}" must appear as a new object in the room. Do not use it as a swap for an existing piece; place it in addition to the rest of the redesign.`;
+    }
     default: {
       const _exhaustive: never = piece.intent;
       throw new Error(`Unhandled piece intent: ${_exhaustive}`);
     }
   }
+}
+
+type PieceAssignment = {
+  label: string;
+  intent: PieceIntent;
+  replaces?: string;
+  alongside?: string;
+};
+
+/** Why a piece cannot be used yet, or null when replace/add targets an analyzed item. */
+export function pieceListError(
+  pieces: PieceAssignment[],
+  furnitureNames: string[],
+): string | null {
+  if (pieces.length === 0) return null;
+  if (furnitureNames.length === 0) {
+    return "Analyze the room to choose which items these pieces replace or sit with.";
+  }
+
+  for (const piece of pieces) {
+    if (!piece.label.trim()) return "Name each uploaded piece.";
+    switch (piece.intent) {
+      case "replace": {
+        const target = piece.replaces?.trim() ?? "";
+        if (!target || !furnitureNames.includes(target)) {
+          return "Choose an analyzed item for every piece you replace.";
+        }
+        break;
+      }
+      case "add": {
+        const target = piece.alongside?.trim() ?? "";
+        if (!target || !furnitureNames.includes(target)) {
+          return "Choose an analyzed item for every piece you add.";
+        }
+        break;
+      }
+      default: {
+        const _exhaustive: never = piece.intent;
+        throw new Error(`Unhandled piece intent: ${_exhaustive}`);
+      }
+    }
+  }
+
+  return null;
 }
 
 export function formatPieceLines(pieces: PieceReference[]): string {

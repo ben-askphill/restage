@@ -100,9 +100,17 @@ export function BriefForm({ value, onChange }: BriefFormProps) {
       </div>
 
       <div className="space-y-2.5">
-        <Label htmlFor="style" className={labelClass}>
-          Style direction
-        </Label>
+        <div className="flex items-baseline gap-2">
+          <Label htmlFor="style" className={labelClass}>
+            Style direction
+          </Label>
+          <span className="text-[13px] font-medium text-muted-foreground">
+            Optional
+          </span>
+        </div>
+        <p className="text-[13px] font-medium text-muted-foreground">
+          Skip this if a saved style is already chosen.
+        </p>
         <Input
           id="style"
           value={value.style}
@@ -117,7 +125,10 @@ export function BriefForm({ value, onChange }: BriefFormProps) {
               <button
                 key={preset}
                 type="button"
-                onClick={() => onChange({ ...value, style: preset })}
+                aria-pressed={selected}
+                onClick={() =>
+                  onChange({ ...value, style: selected ? "" : preset })
+                }
                 className={cn(
                   "rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
                   selected
@@ -147,9 +158,14 @@ export function BriefForm({ value, onChange }: BriefFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="function" className={labelClass}>
-            How is the room used?
-          </Label>
+          <div className="flex items-baseline gap-2">
+            <Label htmlFor="function" className={labelClass}>
+              How is this room used?
+            </Label>
+            <span className="text-[13px] font-medium text-muted-foreground">
+              Optional
+            </span>
+          </div>
           <Textarea
             id="function"
             value={value.function}
