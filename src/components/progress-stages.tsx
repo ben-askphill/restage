@@ -34,8 +34,8 @@ export function ProgressStages({
 }: ProgressStagesProps) {
   return (
     <div className="space-y-3">
-      <nav aria-label="Restage progress" className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
-        <ol className="flex w-max items-center gap-x-5 sm:w-auto sm:flex-wrap sm:justify-center sm:gap-x-7 sm:gap-y-3">
+      <nav aria-label="Restage progress">
+        <ol className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 sm:gap-x-7">
           {FLOW_STAGES.map((stage, index) => {
             const isComplete = completed.includes(stage.id);
             const isViewed = viewed === stage.id;

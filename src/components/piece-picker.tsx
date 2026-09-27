@@ -172,6 +172,7 @@ export function PiecePicker({
   intro,
 }: PiecePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const recentUpload = useRef("");
   const [dragging, setDragging] = useState(false);
   const remaining = MAX_PIECE_REFERENCES - pieces.length;
   const canAdd = remaining > 0 && !disabled;
@@ -185,6 +186,14 @@ export function PiecePicker({
           /\.(heic|heif|jpe?g|png|webp|gif)$/i.test(file.name),
       );
       if (images.length === 0) return;
+      const signature = images
+        .map((file) => `${file.name}:${file.size}:${file.lastModified}`)
+        .join("|");
+      if (signature === recentUpload.current) return;
+      recentUpload.current = signature;
+      window.setTimeout(() => {
+        if (recentUpload.current === signature) recentUpload.current = "";
+      }, 300);
       const next = images.slice(0, remaining).map(newDraft);
       onChange([...pieces, ...next]);
     },
