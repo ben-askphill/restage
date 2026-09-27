@@ -1,4 +1,8 @@
 import { generateObject } from "ai";
+import {
+  ceilingFixtureSourceRule,
+  unkeptCeilingFixtures,
+} from "./ceiling-fixtures";
 import { DESIGNER_SYSTEM_PROMPT } from "./constants";
 import { getDesignerModel } from "./gateway";
 import type { ImageInput } from "./images";
@@ -19,6 +23,9 @@ export async function generateShoppingList(
 ): Promise<ShoppingList> {
   const { brief, renderImage } = input;
   const specified = brief.pieceReferences ?? [];
+  const ceilingBlock = ceilingFixtureSourceRule(
+    unkeptCeilingFixtures(brief.existingFurniture),
+  );
   const specifiedBlock =
     specified.length > 0
       ? `
@@ -46,7 +53,7 @@ Rules:
 - Give retailer names + a search query the user can run. Do NOT fabricate product URLs or claim live prices/stock.
 - Present prices as estimates in local currency.
 - Match approximate dimensions to the scale used in the render.
-- Do NOT include keep-list items. The user is keeping: ${brief.constraintsFromUser.keepItems.join(", ") || "nothing specified"}.${specifiedBlock}
+- Do NOT include keep-list items. The user is keeping: ${brief.constraintsFromUser.keepItems.join(", ") || "nothing specified"}.${ceilingBlock}${specifiedBlock}
 - Include a notes field explaining prices are estimates.`,
           },
           {

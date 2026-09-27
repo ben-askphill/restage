@@ -45,7 +45,11 @@ const windowDoorSchema = z.object({
 });
 
 export const existingFurnitureItemSchema = z.object({
-  item: z.string(),
+  item: z
+    .string()
+    .describe(
+      "Specific name with shape, color, material, and position. Ceiling lights must name the fixture type and finish, for example a brass flush mount or a black multi-arm chandelier.",
+    ),
   keep: z.boolean(),
   note: z.string(),
 });
@@ -78,9 +82,17 @@ export const roomInventorySchema = z.object({
     doors: z.array(windowDoorSchema),
     ceilingHeightM: z.number(),
     floorMaterial: z.string(),
-    builtIns: z.array(z.string()),
+    builtIns: z
+      .array(z.string())
+      .describe(
+        "Built-in millwork and architectural storage only. Ceiling light fixtures are not built-ins.",
+      ),
   }),
-  fixedElements: z.array(z.string()),
+  fixedElements: z
+    .array(z.string())
+    .describe(
+      "Immovable architecture and building services only: radiators, outlets, switches, vents, columns, beams. Do not list chandeliers, flush mounts, pendants, or other ceiling light fixtures here.",
+    ),
   lighting: z.object({
     naturalSources: z.array(
       z.object({
@@ -89,7 +101,11 @@ export const roomInventorySchema = z.object({
         orientation: z.string(),
       }),
     ),
-    existingArtificial: z.array(z.string()),
+    existingArtificial: z
+      .array(z.string())
+      .describe(
+        "Artificial light sources for lighting physics, including each ceiling fixture. Every chandelier, flush mount, pendant, or similar ceiling fixture listed here must also be an existingFurniture item.",
+      ),
     dominantDirection: z.string(),
     mood: z.string(),
   }),
@@ -100,7 +116,11 @@ export const roomInventorySchema = z.object({
     confidence: z.enum(["high", "medium", "low"]),
     referenceUsed: z.string(),
   }),
-  existingFurniture: z.array(existingFurnitureItemSchema),
+  existingFurniture: z
+    .array(existingFurnitureItemSchema)
+    .describe(
+      "Every visible movable object and every ceiling lighting fixture the user can keep, replace, or source: chandeliers, flush mounts, semi-flush mounts, pendants, and similar ceiling lights, plus furniture, rugs, portable lamps, art, and decor. Omit nothing from this list just because it is mounted on the ceiling.",
+    ),
   constraintsFromUser: constraintsFromUserSchema,
 });
 

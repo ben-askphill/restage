@@ -32,7 +32,7 @@ export async function planDesign(input: PlanInput): Promise<DesignBrief> {
       ? keep
           .map((piece) => `- ${piece.item}${piece.note ? ` (${piece.note})` : ""}`)
           .join("\n")
-      : "none — all movable furniture may be replaced";
+      : "none — movable furniture and ceiling lighting fixtures may be replaced";
 
   const pieceBlock =
     pieceMetas.length > 0
@@ -55,6 +55,7 @@ HARD KEEP LIST (do not replace, restyle, reupholster, or relocate these):
 ${keepLines}
 
 layoutConcept must design AROUND those pieces in their current positions. Never propose a new sofa/couch/sectional if a sofa is on the keep list.
+Ceiling lighting in existingFurniture (chandeliers, flush mounts, pendants, and similar fixtures) is replaceable. If one is not on the keep list, specify a new fixture. If it is on the keep list, keep that exact fixture.
 ${pieceBlock}
 
 Room inventory:
