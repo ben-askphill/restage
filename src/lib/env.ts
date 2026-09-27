@@ -28,8 +28,6 @@ export const DEFAULT_DESIGNER_MODEL =
 export const DEFAULT_IMAGE_MODEL =
   process.env.IMAGE_MODEL ?? "google/gemini-3.1-flash-image";
 
-// Landscape/portrait hint for Gemini image output. 1536x1024 → 3:2, 1024x1536 → 2:3, 1024x1024 → 1:1. auto leaves aspect to the room photo.
-export const DEFAULT_IMAGE_SIZE = process.env.IMAGE_SIZE ?? "1536x1024";
-
 // Gemini image resolution: low → 512, medium/auto → 1K, high → 2K.
+// Aspect ratio is not configured here. Render and refine measure the room photo.
 export const DEFAULT_IMAGE_QUALITY = process.env.IMAGE_QUALITY ?? "high";

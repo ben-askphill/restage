@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronsLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,22 @@ export function BeforeAfterSlider({
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(50);
   const [dragging, setDragging] = useState(false);
+  const [frame, setFrame] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const image = new Image();
+    image.onload = () => {
+      if (cancelled) return;
+      if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+        setFrame(`${image.naturalWidth} / ${image.naturalHeight}`);
+      }
+    };
+    image.src = beforeSrc;
+    return () => {
+      cancelled = true;
+    };
+  }, [beforeSrc]);
 
   const updatePosition = useCallback((clientX: number) => {
     const container = containerRef.current;
@@ -45,9 +61,11 @@ export function BeforeAfterSlider({
     <div
       ref={containerRef}
       className={cn(
-        "relative aspect-[3/2] w-full overflow-hidden rounded-3xl bg-muted select-none sm:rounded-[32px]",
+        "relative w-full overflow-hidden rounded-3xl bg-muted select-none sm:rounded-[32px]",
+        frame ? undefined : "min-h-64",
         className,
       )}
+      style={frame ? { aspectRatio: frame } : undefined}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -65,7 +83,7 @@ export function BeforeAfterSlider({
         <img
           src={beforeSrc}
           alt="Before"
-          className="size-full object-cover"
+          className="absolute inset-0 size-full object-cover"
           draggable={false}
         />
       </div>

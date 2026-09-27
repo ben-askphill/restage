@@ -1,4 +1,5 @@
 import { generateObject } from "ai";
+import { aspectRatioForRoomPhoto } from "./aspect-ratio";
 import { DESIGNER_SYSTEM_PROMPT } from "./constants";
 import { getDesignerModel } from "./gateway";
 import { applyKeepItems, keptFurniture } from "./keep";
@@ -86,20 +87,24 @@ ${input.styleProfile}`
     }
   }
 
-  const result = await generateObject({
-    model: getDesignerModel(),
-    schema: designStrategySchema,
-    system: DESIGNER_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content,
-      },
-    ],
-  });
+  const [result, aspectRatio] = await Promise.all([
+    generateObject({
+      model: getDesignerModel(),
+      schema: designStrategySchema,
+      system: DESIGNER_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content,
+        },
+      ],
+    }),
+    aspectRatioForRoomPhoto(input.roomImage),
+  ]);
 
   return {
     ...inventory,
+    aspectRatio,
     designStrategy: result.object,
     pieceReferences: pieceMetas,
   };

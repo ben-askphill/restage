@@ -80,13 +80,13 @@ export function assembleImageInstruction(
     .map((s) => `${s.type} on ${s.wall} (${s.orientation})`)
     .join(", ");
 
-  return `OUTPUT a single photorealistic photograph. Do not reply with text.
+  return `OUTPUT a single photorealistic photograph in aspect ratio ${aspectRatio}, the room photograph's frame. Do not reply with text. Do not letterbox or crop into a different ratio.
 
 Re-decorate the room in the FIRST input image. This is a photo of a real room — keep it
 architecturally identical and shot from the same camera position.
 
 PRESERVE EXACTLY (do not alter): ${architectureSummary}; and these fixed elements: ${fixedElements.join(", ")}. Same camera angle
-(${cameraAngle}), same aspect ratio (${aspectRatio}), same perspective and lens.
+(${cameraAngle}), same aspect ratio (${aspectRatio}) as the room photo, same perspective and lens.
 
 ${keepConstraintBlock(brief)}
 ${pieceBlock(brief)}
@@ -130,10 +130,10 @@ export function assembleRefineInstruction(
   brief: DesignBrief,
   userInstruction: string,
 ): string {
-  return `OUTPUT a single photorealistic photograph. Do not reply with text.
+  return `OUTPUT a single photorealistic photograph in aspect ratio ${brief.aspectRatio}, the original room photograph's frame. Do not reply with text. Do not letterbox or crop into a different ratio.
 
 Edit the FIRST input image (the current redesign) in place.
-Keep the same room, architecture, camera, and aspect ratio (${brief.aspectRatio}).
+Keep the same room, architecture, camera, and aspect ratio (${brief.aspectRatio}) as the original room photo.
 Style remains ${stylePhrase(brief.constraintsFromUser.style)}. Region: ${brief.constraintsFromUser.region}.
 
 ${keepConstraintBlock(brief)}
