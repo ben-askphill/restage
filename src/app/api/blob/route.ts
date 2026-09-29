@@ -1,10 +1,12 @@
 import { get } from "@vercel/blob";
 import { isAllowedBlobPathname } from "@/lib/blob";
-import { apiError, checkBlobConfig } from "@/lib/api";
+import { apiError, checkBlobConfig, requireOwner } from "@/lib/api";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const blobError = checkBlobConfig();
   if (blobError) return blobError;
 

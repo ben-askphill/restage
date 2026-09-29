@@ -1,6 +1,6 @@
 import { addImages, toClient } from "@/lib/ai/styles";
 import type { ImageInput } from "@/lib/ai/images";
-import { apiError, checkBlobConfig, streamStatus } from "@/lib/api";
+import { apiError, checkBlobConfig, streamStatus, requireOwner } from "@/lib/api";
 import { isHeicLike } from "@/lib/media-type";
 
 export const runtime = "nodejs";
@@ -31,6 +31,8 @@ async function fileToImageInput(file: File): Promise<ImageInput> {
 }
 
 export async function POST(request: Request, { params }: Context) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const blobError = checkBlobConfig();
   if (blobError) return blobError;
 

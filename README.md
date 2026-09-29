@@ -44,6 +44,8 @@ cp .env.example .env.local
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `OWNER_PASSWORD` | Password for the Basic auth gate on every page and API route. **Required in production** (app returns 503 without it); optional locally | — |
+| `OWNER_USER` | Username for the Basic auth gate | `owner` |
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway API key (local dev) | — |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob read/write token | — |
 | `DESIGNER_MODEL` | Vision + structured output LLM | `deepseek/deepseek-v4-flash-vision-exp` |
@@ -60,13 +62,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 The UI loads without secrets — API routes return graceful 503 errors until `AI_GATEWAY_API_KEY` and `BLOB_READ_WRITE_TOKEN` are configured.
 
+If `OWNER_PASSWORD` is set locally, the browser asks for the owner credentials once and reuses them for every API call.
+
 ### 5. Deploy to Vercel
 
 ```bash
 vercel
 ```
 
-Set the environment variables in your Vercel project settings. API routes use the Node.js runtime with `maxDuration = 300` for image generation.
+Set the environment variables in your Vercel project settings, including `OWNER_PASSWORD`. Without it every production request returns 503, so a missing variable never leaves the app open. API routes use the Node.js runtime with `maxDuration = 300` for image generation.
+
+## Access
+
+Restage is single-owner. `src/proxy.ts` puts HTTP Basic auth (`OWNER_USER` / `OWNER_PASSWORD`) in front of every page and API route, and every route handler re-checks with `requireOwner()` from `src/lib/api.ts`, so a future matcher change can't silently expose a route. Unauthenticated API calls get `401`, and cross-site POST/DELETE requests get `403` so another site can't reuse cached credentials. All client fetches and images are same-origin, so the browser sends the credentials automatically after the first prompt.
 
 ## Architecture
 

@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import { checkOwner, ownerErrorResponse } from "@/lib/auth";
 import { hasAiGateway, hasBlob } from "@/lib/env";
 
 export function apiError(message: string, status = 500) {
   return NextResponse.json({ error: message }, { status });
+}
+
+// Defense in depth: src/proxy.ts gates these routes too, but each handler
+// re-checks so a matcher change can't silently expose one.
+export function requireOwner(request: Request) {
+  const check = checkOwner(request);
+  return check.ok ? null : ownerErrorResponse(check);
 }
 
 export function checkAiConfig() {

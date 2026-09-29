@@ -1,9 +1,11 @@
 import { createStyle, listStyles, toClient } from "@/lib/ai/styles";
-import { apiError, checkBlobConfig } from "@/lib/api";
+import { apiError, checkBlobConfig, requireOwner } from "@/lib/api";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const blobError = checkBlobConfig();
   if (blobError) return blobError;
 
@@ -18,6 +20,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const blobError = checkBlobConfig();
   if (blobError) return blobError;
 
