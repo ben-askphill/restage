@@ -684,51 +684,49 @@ export function RestageApp() {
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-        <header>
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-4 sm:px-10">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-full bg-primary sm:size-12">
-                <Sofa className="size-5 text-primary-foreground sm:size-6" />
-              </div>
-              <span className="text-xl font-extrabold tracking-tight text-primary sm:text-2xl">
-                Restage
-              </span>
+        <header className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-4 lg:py-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary">
+              <Sofa className="size-4 text-primary-foreground" />
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <p className="hidden text-[15px] font-medium text-muted-foreground lg:block">
+            <div className="min-w-0">
+              <div className="truncate text-lg font-extrabold leading-none tracking-tight text-primary">
+                Restage
+              </div>
+              <p className="mt-1 hidden text-xs font-medium leading-none text-muted-foreground lg:block">
                 Your personal AI interior designer
               </p>
-              <Button
-                type="button"
-                variant="secondary"
-                aria-pressed={galleryOpen}
-                onClick={() => setGalleryOpen((open) => !open)}
-                className="h-11 gap-2 rounded-full px-4 text-[15px] font-bold sm:px-5"
-              >
-                <Images className="size-4" />
-                Gallery
-                {galleryCount > 0 ? (
-                  <span className="rounded-full bg-background px-2 py-0.5 text-[12px]">
-                    {galleryCount}
-                  </span>
-                ) : null}
-              </Button>
             </div>
           </div>
+          <Button
+            type="button"
+            variant="secondary"
+            aria-pressed={galleryOpen}
+            onClick={() => setGalleryOpen((open) => !open)}
+            className="h-8 justify-self-end gap-1.5 rounded-full px-3 text-sm font-bold lg:col-start-3 lg:row-start-1"
+          >
+            <Images className="size-4" />
+            Gallery
+            {galleryCount > 0 ? (
+              <span className="rounded-full bg-background px-1.5 text-[11px] leading-5">
+                {galleryCount}
+              </span>
+            ) : null}
+          </Button>
+          {galleryOpen ? null : (
+            <div className="col-span-2 min-w-0 lg:col-span-1 lg:col-start-2 lg:row-start-1">
+              <ProgressStages
+                viewed={step}
+                completed={completed}
+                available={available}
+                busyStage={activity}
+                locked={busy}
+                statusText={statusText}
+                onSelect={goTo}
+              />
+            </div>
+          )}
         </header>
-        {galleryOpen ? null : (
-          <div className="mx-auto max-w-5xl px-5 pb-4 sm:px-10">
-            <ProgressStages
-              viewed={step}
-              completed={completed}
-              available={available}
-              busyStage={activity}
-              locked={busy}
-              statusText={statusText}
-              onSelect={goTo}
-            />
-          </div>
-        )}
       </div>
 
       <main
