@@ -38,7 +38,7 @@ export function RefineBar({ onRefine, disabled, allowEmpty = false }: RefineBarP
 
   return (
     <div className="sticky bottom-0 px-5 pb-5 sm:px-10">
-      <div className="mx-auto flex max-w-4xl flex-col gap-3 rounded-[28px] border border-border bg-background/95 p-4 shadow-[0_12px_32px_rgba(36,28,23,0.10)] backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:px-5">
+      <div className="mx-auto flex max-w-4xl flex-col gap-3 rounded-lg border border-border bg-background/95 p-4 shadow-[0_12px_32px_rgba(36,28,23,0.10)] backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:px-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-1 text-sm font-bold">Refine this design</span>
           {REFINE_CHIPS.map((chip) => (
@@ -46,7 +46,7 @@ export function RefineBar({ onRefine, disabled, allowEmpty = false }: RefineBarP
               key={chip}
               type="button"
               disabled={disabled || loading}
-              className="rounded-full bg-muted px-3.5 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#ece8e2] disabled:opacity-50"
+              className="rounded-lg bg-muted px-3.5 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#ece8e2] disabled:opacity-50"
               onClick={() => handleRefine(chip.toLowerCase())}
             >
               {chip}
@@ -65,12 +65,12 @@ export function RefineBar({ onRefine, disabled, allowEmpty = false }: RefineBarP
             onChange={(e) => setInstruction(e.target.value)}
             placeholder="e.g. swap the sofa for something in cognac leather"
             disabled={disabled || loading}
-            className="h-12 grow rounded-full border-transparent bg-muted px-5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
+            className="h-12 grow rounded-lg border-transparent bg-muted px-5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
           />
           <Button
             type="submit"
             disabled={disabled || loading || (!instruction.trim() && !allowEmpty)}
-            className="h-12 rounded-full px-6 text-[15px] font-bold"
+            className="h-12 rounded-lg px-6 text-[15px] font-bold"
           >
             {loading ? (
               <Loader2 className="size-4 animate-spin" />

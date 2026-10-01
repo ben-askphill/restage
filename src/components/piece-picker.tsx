@@ -87,7 +87,7 @@ function FurnitureTarget({
       >
         <SelectTrigger
           id={fieldId}
-          className="h-11 w-full rounded-full border-transparent bg-muted px-4 text-[15px] font-medium"
+          className="h-11 w-full rounded-lg border-transparent bg-muted px-4 text-[15px] font-medium"
         >
           <SelectValue placeholder="Choose an item found in the room" />
         </SelectTrigger>
@@ -126,7 +126,7 @@ function IntentToggle({
     <div
       role="radiogroup"
       aria-label="How to use this piece"
-      className="inline-flex rounded-full bg-muted p-1"
+      className="inline-flex rounded-lg bg-muted p-1"
     >
       {options.map((option) => {
         const selected = value === option.intent;
@@ -140,7 +140,7 @@ function IntentToggle({
             title={option.hint}
             onClick={() => onChange(option.intent)}
             className={cn(
-              "rounded-full px-3.5 py-1.5 text-[13px] font-bold transition-colors disabled:opacity-50",
+              "rounded-lg px-3.5 py-1.5 text-[13px] font-bold transition-colors disabled:opacity-50",
               selected
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
@@ -326,7 +326,7 @@ export function PiecePicker({
                     }
                     placeholder="e.g. walnut sofa, brass floor lamp"
                     disabled={disabled}
-                    className="h-11 rounded-full border-transparent bg-muted px-4 text-[15px] font-medium placeholder:text-faint"
+                    className="h-11 rounded-lg border-transparent bg-muted px-4 text-[15px] font-medium placeholder:text-faint"
                   />
                 </div>
                 {needsAnalyzedTarget(piece.intent) ? (

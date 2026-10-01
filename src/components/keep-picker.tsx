@@ -192,7 +192,7 @@ export function KeepPicker({
           aria-label="Select all analyzed items except ones you are replacing"
           disabled={selectAllDisabled}
           onClick={toggleSelectAll}
-          className="flex shrink-0 items-center gap-3 rounded-full bg-muted py-2 pl-4 pr-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex shrink-0 items-center gap-3 rounded-lg bg-muted py-2 pl-4 pr-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="flex flex-col">
             <span className="text-[15px] font-bold leading-tight">Select all</span>
@@ -251,14 +251,14 @@ export function KeepPicker({
           }}
           placeholder="Add another keep item"
           disabled={disabled}
-          className="h-12 grow rounded-full border-transparent bg-muted px-5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
+          className="h-12 grow rounded-lg border-transparent bg-muted px-5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
         />
         <Button
           type="button"
           variant="secondary"
           onClick={addManualItem}
           disabled={disabled || !manualItem.trim()}
-          className="h-12 rounded-full px-6 text-[15px] font-bold"
+          className="h-12 rounded-lg px-6 text-[15px] font-bold"
         >
           Add
         </Button>
