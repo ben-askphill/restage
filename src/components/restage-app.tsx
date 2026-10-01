@@ -632,7 +632,7 @@ export function RestageApp() {
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-        <header className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:px-8 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-5 lg:py-2">
+        <header className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-1.5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-x-4 lg:py-2">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary">
               <Sofa className="size-4 text-primary-foreground" />
@@ -641,7 +641,7 @@ export function RestageApp() {
               <div className="truncate text-lg font-extrabold leading-none tracking-tight text-primary">
                 Restage
               </div>
-              <p className="mt-1 hidden truncate text-[11px] font-medium leading-none text-muted-foreground lg:block">
+              <p className="mt-1 hidden text-xs font-medium leading-none text-muted-foreground lg:block">
                 Your personal AI interior designer
               </p>
             </div>
