@@ -1,11 +1,12 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
-// Single-owner access check shared by src/proxy.ts and every API route.
+// Optional single-owner access check shared by src/proxy.ts and every API route.
 // HTTP Basic auth against OWNER_USER (default "owner") and OWNER_PASSWORD.
+// With no password set, the app stays open.
 
 export type OwnerCheck =
   | { ok: true }
-  | { ok: false; status: 401 | 403 | 503; message: string };
+  | { ok: false; status: 401 | 403; message: string };
 
 const REALM = 'Basic realm="Restage", charset="UTF-8"';
 
@@ -20,17 +21,7 @@ function isSafeMethod(method: string) {
 export function checkOwner(request: Request): OwnerCheck {
   const password = process.env.OWNER_PASSWORD;
 
-  if (!password) {
-    // Fail closed in production so a missing env var never leaves the app open.
-    if (process.env.NODE_ENV === "production") {
-      return {
-        ok: false,
-        status: 503,
-        message: "OWNER_PASSWORD is not configured.",
-      };
-    }
-    return { ok: true };
-  }
+  if (!password) return { ok: true };
 
   // Cached Basic credentials ride along on cross-site requests, so block
   // state-changing requests that come from another site.

@@ -25,14 +25,16 @@ afterEach(() => {
 });
 
 describe("checkOwner", () => {
-  it("fails closed in production without a password", () => {
+  it("stays open in production without a password", () => {
     delete env.OWNER_PASSWORD;
     env.NODE_ENV = "production";
-    assert.deepEqual(checkOwner(request()), {
-      ok: false,
-      status: 503,
-      message: "OWNER_PASSWORD is not configured.",
-    });
+    assert.equal(checkOwner(request()).ok, true);
+  });
+
+  it("treats an empty password as unset", () => {
+    env.OWNER_PASSWORD = "";
+    env.NODE_ENV = "production";
+    assert.equal(checkOwner(request()).ok, true);
   });
 
   it("stays open in development without a password", () => {
