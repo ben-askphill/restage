@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Download, Images, Loader2, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Download, Images, Loader2, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadBlob, downloadFilename } from "@/lib/download-image";
 import {
@@ -25,6 +26,78 @@ function formatWhen(timestamp: number): string {
   }).format(timestamp);
 }
 
+function GalleryLightbox({
+  entry,
+  onClose,
+}: {
+  entry: GalleryEntry;
+  onClose: () => void;
+}) {
+  const titleId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key === "Tab") {
+        event.preventDefault();
+        closeButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black/80"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      onClick={onClose}
+    >
+      <div className="flex justify-end p-3 sm:p-4">
+        <button
+          ref={closeButtonRef}
+          type="button"
+          aria-label="Close"
+          onClick={(event) => {
+            event.stopPropagation();
+            onClose();
+          }}
+          className="flex size-11 items-center justify-center rounded-full bg-background text-foreground shadow-lg outline-none focus-visible:ring-3 focus-visible:ring-ring"
+        >
+          <X className="size-5" />
+        </button>
+      </div>
+      <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-4 sm:px-10 sm:pb-10">
+        <h2 id={titleId} className="sr-only">
+          {entry.roomType} generation
+        </h2>
+        {/* Blob URLs from the local gallery cannot be optimized by next/image. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={entry.url}
+          alt={`${entry.roomType} generation`}
+          className="h-auto w-auto max-h-[calc(100dvh-7.5rem)] max-w-[calc(100vw-2rem)] object-contain sm:max-w-[calc(100vw-5rem)]"
+          onClick={(event) => event.stopPropagation()}
+        />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function GalleryLibrary({
   revision,
   onBack,
@@ -34,6 +107,8 @@ export function GalleryLibrary({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +139,15 @@ export function GalleryLibrary({
       for (const url of created) URL.revokeObjectURL(url);
     };
   }, [revision]);
+
+  const active = entries.find((entry) => entry.id === activeId) ?? null;
+
+  const closeLightbox = useCallback(() => {
+    setActiveId(null);
+    const trigger = returnFocusRef.current;
+    returnFocusRef.current = null;
+    requestAnimationFrame(() => trigger?.focus());
+  }, []);
 
   return (
     <section className="space-y-6">
@@ -114,12 +198,23 @@ export function GalleryLibrary({
               key={entry.id}
               className="overflow-hidden rounded-3xl border border-border bg-background"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={entry.url}
-                alt={`${entry.roomType} generation`}
-                className="w-full bg-muted"
-              />
+              <button
+                type="button"
+                onClick={(event) => {
+                  returnFocusRef.current = event.currentTarget;
+                  setActiveId(entry.id);
+                }}
+                aria-label={`View ${entry.roomType} generation`}
+                className="block w-full cursor-zoom-in bg-muted outline-none focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-inset"
+              >
+                {/* Blob URLs from the local gallery cannot be optimized by next/image. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.url}
+                  alt=""
+                  className="w-full"
+                />
+              </button>
               <div className="flex flex-col gap-3 p-4">
                 <div className="space-y-1">
                   <p className="text-[15px] font-bold capitalize">
@@ -186,6 +281,8 @@ export function GalleryLibrary({
           ))}
         </ul>
       )}
+
+      {active ? <GalleryLightbox entry={active} onClose={closeLightbox} /> : null}
     </section>
   );
 }
