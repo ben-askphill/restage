@@ -6,12 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ExistingFurnitureItem } from "@/lib/ai/schemas";
 import { itemsMatch } from "@/lib/ai/keep";
+import {
+  applyKeepSelectAll,
+  clearKeepSelectAll,
+  setKeepItemChecked,
+  type KeepToggleMemory,
+} from "@/lib/ai/keep-selection";
 import { cn } from "@/lib/utils";
+
+export type KeepSelectionChange = {
+  keepItems: string[];
+  selectAll: boolean;
+  memory: KeepToggleMemory;
+};
 
 type KeepPickerProps = {
   furniture: ExistingFurnitureItem[];
   keepItems: string[];
-  onChange: (keepItems: string[]) => void;
+  selectAll: boolean;
+  memory: KeepToggleMemory;
+  onChange: (selection: KeepSelectionChange) => void;
   disabled?: boolean;
   /** Existing items the user is swapping out with an uploaded piece photo. */
   replacedItems?: string[];
@@ -77,6 +91,8 @@ function KeepRow({
 export function KeepPicker({
   furniture,
   keepItems,
+  selectAll,
+  memory,
   onChange,
   disabled = false,
   replacedItems = [],
@@ -89,14 +105,44 @@ export function KeepPicker({
   const isReplaced = (item: string) =>
     replacedItems.some((target) => itemsMatch(item, target));
 
-  const toggleItem = (item: string, checked: boolean) => {
-    if (isReplaced(item)) return;
-    if (checked) {
-      if (isKept(item)) return;
-      onChange([...keepItems, item]);
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      const next = clearKeepSelectAll(keepItems, memory, replacedItems);
+      onChange({
+        keepItems: next.keepItems,
+        selectAll: false,
+        memory: next.memory,
+      });
       return;
     }
-    onChange(keepItems.filter((keep) => !itemsMatch(item, keep)));
+    const next = applyKeepSelectAll(
+      keepItems,
+      memory,
+      furniture,
+      replacedItems,
+    );
+    onChange({
+      keepItems: next.keepItems,
+      selectAll: true,
+      memory: next.memory,
+    });
+  };
+
+  const toggleItem = (item: string, checked: boolean) => {
+    if (isReplaced(item)) return;
+    const next = setKeepItemChecked(
+      item,
+      checked,
+      keepItems,
+      memory,
+      selectAll,
+      furniture,
+    );
+    onChange({
+      keepItems: next.keepItems,
+      selectAll: next.selectAll,
+      memory: next.memory,
+    });
   };
 
   const addManualItem = () => {
@@ -105,7 +151,19 @@ export function KeepPicker({
       setManualItem("");
       return;
     }
-    onChange([...keepItems, trimmed]);
+    const next = setKeepItemChecked(
+      trimmed,
+      true,
+      keepItems,
+      memory,
+      selectAll,
+      furniture,
+    );
+    onChange({
+      keepItems: next.keepItems,
+      selectAll: next.selectAll,
+      memory: next.memory,
+    });
     setManualItem("");
   };
 
@@ -113,8 +171,50 @@ export function KeepPicker({
     (keep) => !furniture.some((piece) => itemsMatch(piece.item, keep)),
   );
 
+  const selectAllDisabled = disabled || furniture.length === 0;
+
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0 space-y-1.5">
+          <h2 className="text-[22px] font-extrabold tracking-[-0.02em]">
+            What should stay?
+          </h2>
+          <p className="font-medium text-muted-foreground">
+            Check anything that should remain as it is. You can also type an
+            item that was missed.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={selectAll}
+          aria-label="Select all analyzed items except ones you are replacing"
+          disabled={selectAllDisabled}
+          onClick={toggleSelectAll}
+          className="flex shrink-0 items-center gap-3 rounded-full bg-muted py-2 pl-4 pr-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="flex flex-col">
+            <span className="text-[15px] font-bold leading-tight">Select all</span>
+            <span className="text-[12px] font-medium leading-tight text-muted-foreground">
+              Except replaced items
+            </span>
+          </span>
+          <span
+            className={cn(
+              "relative h-[26px] w-11 shrink-0 rounded-full transition-colors",
+              selectAll ? "bg-primary" : "bg-[#ddd5cc]",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-[3px] size-5 rounded-full bg-white transition-all",
+                selectAll ? "left-[21px]" : "left-[3px]",
+              )}
+            />
+          </span>
+        </button>
+      </div>
       <div className="space-y-2.5">
         {furniture.map((piece, index) => (
           <KeepRow
