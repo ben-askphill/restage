@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { UploadZone } from "@/components/upload-zone";
 import { StylePicker } from "@/components/style-picker";
 import { BriefForm } from "@/components/brief-form";
-import { KeepPicker } from "@/components/keep-picker";
+import { KeepPicker, type KeepSelectionChange } from "@/components/keep-picker";
 import { PiecePicker, type PieceDraft } from "@/components/piece-picker";
 import {
   FLOW_STAGES,
@@ -22,6 +22,13 @@ import { downloadFilename, downloadUrl } from "@/lib/download-image";
 import { blobFromImageUrl, listGenerations, saveGeneration } from "@/lib/gallery-store";
 import { composeRefineInstruction, type ImageNote } from "@/lib/image-notes";
 import { itemsMatch } from "@/lib/ai/keep";
+import {
+  applyKeepSelectAll,
+  emptyKeepToggleMemory,
+  sameKeepList,
+  sameKeepToggleMemory,
+  type KeepToggleMemory,
+} from "@/lib/ai/keep-selection";
 import {
   describePieceIntent,
   labelFromFilename,
@@ -196,6 +203,10 @@ export function RestageApp() {
   const [pieces, setPieces] = useState<PieceDraft[]>([]);
   const [floorPlanFile, setFloorPlanFile] = useState<File[]>([]);
   const [brief, setBrief] = useState<UserBriefInput>(defaultBrief);
+  const [keepSelectAll, setKeepSelectAll] = useState(false);
+  const [keepMemory, setKeepMemory] = useState<KeepToggleMemory>(
+    emptyKeepToggleMemory,
+  );
   const [qualityGate, setQualityGate] = useState(true);
   const [imageNotes, setImageNotes] = useState<ImageNote[]>([]);
 
@@ -218,6 +229,13 @@ export function RestageApp() {
   const furnitureNames =
     inventory?.existingFurniture.map((item) => item.item) ?? [];
   const assignmentError = pieceListError(pieces, furnitureNames);
+  const replacedItems = useMemo(
+    () =>
+      pieces
+        .filter((piece) => piece.intent === "replace" && piece.replaces.trim())
+        .map((piece) => piece.replaces.trim()),
+    [pieces],
+  );
   const canAnalyze = roomFiles.length > 0;
 
   useEffect(() => {
@@ -277,6 +295,8 @@ export function RestageApp() {
     setStatusText("");
     setActivity(null);
     setBrief((current) => ({ ...current, keepItems: [] }));
+    setKeepSelectAll(false);
+    setKeepMemory(emptyKeepToggleMemory());
     setPieces((current) =>
       current.map((piece) => ({ ...piece, replaces: "" })),
     );
@@ -289,11 +309,41 @@ export function RestageApp() {
     setGalleryOpen(false);
   };
 
+  const handleKeepSelection = (selection: KeepSelectionChange) => {
+    setKeepSelectAll(selection.selectAll);
+    setKeepMemory(selection.memory);
+    setBrief((current) =>
+      sameKeepList(current.keepItems, selection.keepItems)
+        ? current
+        : { ...current, keepItems: selection.keepItems },
+    );
+  };
+
   const handlePiecesChange = (next: PieceDraft[]) => {
-    setPieces(next);
     const replaced = next
       .filter((piece) => piece.intent === "replace" && piece.replaces.trim())
       .map((piece) => piece.replaces.trim());
+    const furniture = inventory?.existingFurniture ?? [];
+    setPieces(next);
+
+    if (keepSelectAll) {
+      const applied = applyKeepSelectAll(
+        brief.keepItems,
+        keepMemory,
+        furniture,
+        replaced,
+      );
+      if (!sameKeepToggleMemory(keepMemory, applied.memory)) {
+        setKeepMemory(applied.memory);
+      }
+      setBrief((current) =>
+        sameKeepList(current.keepItems, applied.keepItems)
+          ? current
+          : { ...current, keepItems: applied.keepItems },
+      );
+      return;
+    }
+
     if (replaced.length === 0) return;
     setBrief((current) => {
       const keepItems = current.keepItems.filter(
@@ -367,6 +417,8 @@ export function RestageApp() {
       );
       setInventory(analyzed);
       setBrief((current) => ({ ...current, keepItems: [] }));
+      setKeepSelectAll(false);
+      setKeepMemory(emptyKeepToggleMemory());
       setPieces((current) =>
         current.map((piece) => ({ ...piece, replaces: "" })),
       );
@@ -832,27 +884,13 @@ export function RestageApp() {
                     disabled={busy}
                     intro={null}
                   />
-                  <div className="space-y-1.5">
-                    <h2 className="text-[22px] font-extrabold tracking-[-0.02em]">
-                      What should stay?
-                    </h2>
-                    <p className="font-medium text-muted-foreground">
-                      Check anything that should remain as it is. You can also
-                      type an item that was missed.
-                    </p>
-                  </div>
                   <KeepPicker
                     furniture={inventory.existingFurniture}
                     keepItems={brief.keepItems}
-                    replacedItems={pieces
-                      .filter(
-                        (piece) =>
-                          piece.intent === "replace" && piece.replaces.trim(),
-                      )
-                      .map((piece) => piece.replaces.trim())}
-                    onChange={(keepItems) =>
-                      setBrief((current) => ({ ...current, keepItems }))
-                    }
+                    selectAll={keepSelectAll}
+                    memory={keepMemory}
+                    replacedItems={replacedItems}
+                    onChange={handleKeepSelection}
                     disabled={busy}
                   />
                   {assignmentError ? (
