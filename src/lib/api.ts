@@ -6,8 +6,8 @@ export function apiError(message: string, status = 500) {
   return NextResponse.json({ error: message }, { status });
 }
 
-// Defense in depth: src/proxy.ts gates these routes too, but each handler
-// re-checks so a matcher change can't silently expose one.
+// Defense in depth: when OWNER_PASSWORD is set, src/proxy.ts gates these
+// routes too, and each handler re-checks so a matcher change can't skip it.
 export function requireOwner(request: Request) {
   const check = checkOwner(request);
   return check.ok ? null : ownerErrorResponse(check);

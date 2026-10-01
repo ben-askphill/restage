@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { checkOwner, ownerErrorResponse } from "@/lib/auth";
 
-// Gate every page and API route behind the owner's Basic auth credentials.
+// When OWNER_PASSWORD is set, gate every page and API route behind Basic auth.
 // Route handlers re-check with requireOwner() in case this matcher changes.
 export function proxy(request: NextRequest) {
   const check = checkOwner(request);
