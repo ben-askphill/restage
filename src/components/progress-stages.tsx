@@ -33,9 +33,9 @@ export function ProgressStages({
   onSelect,
 }: ProgressStagesProps) {
   return (
-    <div className="space-y-3">
+    <div>
       <nav aria-label="Restage progress">
-        <ol className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 sm:gap-x-7">
+        <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:gap-x-3.5">
           {FLOW_STAGES.map((stage, index) => {
             const isComplete = completed.includes(stage.id);
             const isViewed = viewed === stage.id;
@@ -44,13 +44,13 @@ export function ProgressStages({
             const isPending = !isComplete && !isViewed && !isBusy;
 
             return (
-              <li key={stage.id}>
+              <li key={stage.id} className="shrink-0">
                 <button
                   type="button"
                   aria-current={isViewed ? "step" : undefined}
                   disabled={!isAvailable || locked}
                   onClick={() => onSelect(stage.id)}
-                  className="flex items-center gap-2.5 rounded-lg py-1 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 rounded-lg disabled:cursor-not-allowed"
                 >
                   <span
                     className={cn(
@@ -59,7 +59,9 @@ export function ProgressStages({
                       (isViewed || isBusy) &&
                         !isComplete &&
                         "border-2 border-primary text-primary",
-                      isViewed && isComplete && "ring-2 ring-primary ring-offset-2",
+                      isViewed &&
+                        isComplete &&
+                        "ring-2 ring-primary ring-offset-2",
                       isPending && "border-2 border-[#ddd5cc] text-faint",
                     )}
                   >
@@ -90,7 +92,7 @@ export function ProgressStages({
         </ol>
       </nav>
       {statusText ? (
-        <p className="animate-pulse text-center text-sm font-medium text-muted-foreground">
+        <p className="mt-0.5 animate-pulse text-center text-sm font-medium leading-tight text-muted-foreground">
           {statusText}
         </p>
       ) : null}
