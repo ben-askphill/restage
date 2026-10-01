@@ -53,7 +53,7 @@ export function RefineBar({
     <aside
       aria-label="Refine this design"
       className={cn(
-        "flex flex-col overflow-hidden rounded-[28px] border border-border bg-background shadow-[0_12px_32px_rgba(36,28,23,0.08)]",
+        "flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-[0_12px_32px_rgba(36,28,23,0.08)]",
         className,
       )}
     >
@@ -87,7 +87,7 @@ export function RefineBar({
               type="button"
               disabled={disabled || loading}
               onClick={() => handleRefine(APPLY_PINNED_NOTES)}
-              className="rounded-full bg-tint px-3.5 py-1.5 text-[13px] font-semibold text-tint-foreground transition-colors hover:bg-[#f3d9cc] disabled:opacity-50"
+              className="rounded-lg bg-tint px-3.5 py-1.5 text-[13px] font-semibold text-tint-foreground transition-colors hover:bg-[#f3d9cc] disabled:opacity-50"
             >
               Apply the comments I left
             </button>
@@ -100,7 +100,7 @@ export function RefineBar({
               key={chip}
               type="button"
               disabled={disabled || loading}
-              className="rounded-full bg-muted px-3.5 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#ece8e2] disabled:opacity-50"
+              className="rounded-lg bg-muted px-3.5 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#ece8e2] disabled:opacity-50"
               onClick={() => handleRefine(chip.toLowerCase())}
             >
               {chip}
@@ -122,12 +122,12 @@ export function RefineBar({
           placeholder="e.g. swap the sofa for something in cognac leather"
           disabled={disabled || loading}
           aria-label="Refinement instruction"
-          className="h-12 min-w-0 grow rounded-full border-transparent bg-muted px-5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
+          className="h-12 min-w-0 grow rounded-lg border-transparent bg-muted px-5 text-[15px] font-medium placeholder:text-faint dark:bg-muted"
         />
         <Button
           type="submit"
           disabled={disabled || loading || (!instruction.trim() && !allowEmpty)}
-          className="h-12 rounded-full px-6 text-[15px] font-bold sm:shrink-0 lg:w-full"
+          className="h-12 rounded-lg px-6 text-[15px] font-bold sm:shrink-0 lg:w-full"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : "Refine"}
         </Button>

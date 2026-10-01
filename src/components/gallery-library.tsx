@@ -89,7 +89,7 @@ function GalleryLightbox({
         <img
           src={entry.url}
           alt={`${entry.roomType} generation`}
-          className="h-auto w-auto max-h-[calc(100dvh-7.5rem)] max-w-[calc(100vw-2rem)] object-contain sm:max-w-[calc(100vw-5rem)]"
+          className="h-auto w-auto max-h-[calc(100dvh-7.5rem)] max-w-[calc(100vw-2rem)] rounded-lg object-contain sm:max-w-[calc(100vw-5rem)]"
           onClick={(event) => event.stopPropagation()}
         />
       </div>
@@ -164,7 +164,7 @@ export function GalleryLibrary({
           type="button"
           variant="secondary"
           onClick={onBack}
-          className="h-12 rounded-full px-6 text-[15px] font-bold"
+          className="h-12 rounded-lg px-6 text-[15px] font-bold"
         >
           Back to design
         </Button>
@@ -249,7 +249,7 @@ export function GalleryLibrary({
                         setDownloadingId(null);
                       }
                     }}
-                    className="h-10 gap-2 rounded-full px-4 text-[14px] font-bold"
+                    className="h-10 gap-2 rounded-lg px-4 text-[14px] font-bold"
                   >
                     <Download className="size-4" />
                     Download
@@ -270,7 +270,7 @@ export function GalleryLibrary({
                         );
                       }
                     }}
-                    className="h-10 gap-2 rounded-full px-4 text-[14px] font-bold"
+                    className="h-10 gap-2 rounded-lg px-4 text-[14px] font-bold"
                   >
                     <Trash2 className="size-4" />
                     Remove

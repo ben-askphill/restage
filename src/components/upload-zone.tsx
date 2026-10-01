@@ -81,7 +81,7 @@ export function UploadZone({
         </div>
         <span
           className={cn(
-            "rounded-full px-3 py-1.5 text-xs font-bold",
+            "rounded-lg px-3 py-1.5 text-xs font-bold",
             badge === "Required"
               ? "bg-tint text-tint-foreground"
               : "bg-background text-muted-foreground",

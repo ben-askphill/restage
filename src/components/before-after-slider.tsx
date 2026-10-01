@@ -61,7 +61,7 @@ export function BeforeAfterSlider({
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full overflow-hidden rounded-3xl bg-muted select-none sm:rounded-[32px]",
+        "relative w-full overflow-hidden rounded-3xl bg-muted select-none",
         frame ? undefined : "min-h-64",
         className,
       )}
@@ -95,10 +95,10 @@ export function BeforeAfterSlider({
           <ChevronsLeftRight className="size-[18px] text-foreground" strokeWidth={2.5} />
         </div>
       </div>
-      <div className="pointer-events-none absolute top-4 left-4 rounded-full bg-white px-4 py-2 text-[13px] font-bold text-foreground sm:top-5 sm:left-5">
+      <div className="pointer-events-none absolute top-4 left-4 rounded-lg bg-white px-4 py-2 text-[13px] font-bold text-foreground sm:top-5 sm:left-5">
         Before
       </div>
-      <div className="pointer-events-none absolute top-4 right-4 rounded-full bg-foreground px-4 py-2 text-[13px] font-bold text-background sm:top-5 sm:right-5">
+      <div className="pointer-events-none absolute top-4 right-4 rounded-lg bg-foreground px-4 py-2 text-[13px] font-bold text-background sm:top-5 sm:right-5">
         After
       </div>
     </div>

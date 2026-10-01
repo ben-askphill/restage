@@ -15,7 +15,7 @@ export function ShoppingListView({ list }: ShoppingListViewProps) {
           <h3 className="text-[28px] font-extrabold tracking-[-0.02em]">
             Shopping list
           </h3>
-          <span className="rounded-full bg-muted px-3 py-1.5 text-[13px] font-bold">
+          <span className="rounded-lg bg-muted px-3 py-1.5 text-[13px] font-bold">
             {list.currency}
           </span>
         </div>
@@ -35,7 +35,7 @@ export function ShoppingListView({ list }: ShoppingListViewProps) {
             <div className="flex flex-col gap-2.5 p-4.5">
               <div className="flex items-start justify-between gap-2">
                 <span className="text-base font-bold">{item.name}</span>
-                <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-bold">
+                <span className="shrink-0 rounded-lg bg-muted px-2.5 py-1 text-xs font-bold">
                   {item.category}
                 </span>
               </div>
@@ -55,7 +55,7 @@ export function ShoppingListView({ list }: ShoppingListViewProps) {
                   {item.retailers.map((retailer) => (
                     <span
                       key={retailer}
-                      className="rounded-full border border-border px-2.5 py-1 text-xs font-semibold"
+                      className="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold"
                     >
                       {retailer}
                     </span>

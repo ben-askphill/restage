@@ -50,7 +50,7 @@ export function ProgressStages({
                   aria-current={isViewed ? "step" : undefined}
                   disabled={!isAvailable || locked}
                   onClick={() => onSelect(stage.id)}
-                  className="flex items-center gap-1.5 rounded-full disabled:cursor-not-allowed"
+                  className="flex items-center gap-1.5 rounded-lg disabled:cursor-not-allowed"
                 >
                   <span
                     className={cn(

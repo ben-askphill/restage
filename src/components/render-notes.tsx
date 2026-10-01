@@ -116,7 +116,7 @@ export function RenderNotes({
             <Button
               type="submit"
               disabled={disabled || !draft.text.trim()}
-              className="h-11 rounded-full px-5 text-[15px] font-bold"
+              className="h-11 rounded-lg px-5 text-[15px] font-bold"
             >
               Add note
             </Button>
@@ -124,7 +124,7 @@ export function RenderNotes({
               type="button"
               variant="secondary"
               onClick={() => setDraft(null)}
-              className="h-11 rounded-full px-5 text-[15px] font-bold"
+              className="h-11 rounded-lg px-5 text-[15px] font-bold"
             >
               Cancel
             </Button>

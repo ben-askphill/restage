@@ -130,7 +130,7 @@ export function BriefForm({ value, onChange }: BriefFormProps) {
                   onChange({ ...value, style: selected ? "" : preset })
                 }
                 className={cn(
-                  "rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
+                  "rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
                   selected
                     ? "bg-foreground text-background"
                     : "bg-muted hover:bg-[#ece8e2]",

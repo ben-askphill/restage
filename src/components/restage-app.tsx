@@ -181,7 +181,7 @@ function DownloadImageButton({
           setDownloading(false);
         }
       }}
-      className="h-12 gap-2 rounded-full px-6 text-[15px] font-bold"
+      className="h-12 gap-2 rounded-lg px-6 text-[15px] font-bold"
     >
       {downloading ? <Loader2 className="animate-spin" /> : <Download />}
       Download image
@@ -703,12 +703,12 @@ export function RestageApp() {
             variant="secondary"
             aria-pressed={galleryOpen}
             onClick={() => setGalleryOpen((open) => !open)}
-            className="h-8 justify-self-end gap-1.5 rounded-full px-3 text-sm font-bold lg:col-start-3 lg:row-start-1"
+            className="h-8 justify-self-end gap-1.5 rounded-lg px-3 text-sm font-bold lg:col-start-3 lg:row-start-1"
           >
             <Images className="size-4" />
             Gallery
             {galleryCount > 0 ? (
-              <span className="rounded-full bg-background px-1.5 text-[11px] leading-5">
+              <span className="rounded-lg bg-background px-1.5 text-[11px] leading-5">
                 {galleryCount}
               </span>
             ) : null}
@@ -806,7 +806,7 @@ export function RestageApp() {
                         alt="Analyzed room"
                         className="block w-full object-cover"
                       />
-                      <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background py-2 pl-3.5 pr-4 text-[13px] font-bold shadow-sm">
+                      <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-lg bg-background py-2 pl-3.5 pr-4 text-[13px] font-bold shadow-sm">
                         <Check className="size-3.5 text-primary" strokeWidth={3} />
                         Analyzed
                       </div>
@@ -820,7 +820,7 @@ export function RestageApp() {
                   <Button
                     onClick={handleAnalyze}
                     disabled={!canAnalyze || busy}
-                    className="h-14 gap-2.5 rounded-full px-8 text-[17px] font-bold [&_svg:not([class*='size-'])]:size-5"
+                    className="h-14 gap-2.5 rounded-lg px-8 text-[17px] font-bold [&_svg:not([class*='size-'])]:size-5"
                   >
                     {analyzing ? (
                       <>
@@ -839,7 +839,7 @@ export function RestageApp() {
                       variant="secondary"
                       onClick={() => goTo("pieces")}
                       disabled={busy}
-                      className="h-14 rounded-full px-7 text-[17px] font-bold"
+                      className="h-14 rounded-lg px-7 text-[17px] font-bold"
                     >
                       Continue to pieces
                     </Button>
@@ -902,7 +902,7 @@ export function RestageApp() {
                     <Button
                       onClick={() => goTo("style")}
                       disabled={busy || Boolean(assignmentError)}
-                      className="h-14 rounded-full px-8 text-[17px] font-bold"
+                      className="h-14 rounded-lg px-8 text-[17px] font-bold"
                     >
                       Continue to style
                     </Button>
@@ -910,7 +910,7 @@ export function RestageApp() {
                       variant="secondary"
                       onClick={() => goTo("space")}
                       disabled={busy}
-                      className="h-14 rounded-full px-7 text-[17px] font-bold"
+                      className="h-14 rounded-lg px-7 text-[17px] font-bold"
                     >
                       Back
                     </Button>
@@ -1001,7 +1001,7 @@ export function RestageApp() {
                   <Button
                     onClick={handleGenerate}
                     disabled={busy || Boolean(assignmentError)}
-                    className="h-14 gap-2.5 rounded-full px-8 text-[17px] font-bold [&_svg:not([class*='size-'])]:size-5"
+                    className="h-14 gap-2.5 rounded-lg px-8 text-[17px] font-bold [&_svg:not([class*='size-'])]:size-5"
                   >
                     {generating ? (
                       <>
@@ -1019,7 +1019,7 @@ export function RestageApp() {
                     variant="secondary"
                     onClick={() => goTo("pieces")}
                     disabled={busy}
-                    className="h-14 rounded-full px-7 text-[17px] font-bold"
+                    className="h-14 rounded-lg px-7 text-[17px] font-bold"
                   >
                     Back
                   </Button>
@@ -1048,7 +1048,7 @@ export function RestageApp() {
                     {designBrief.constraintsFromUser.keepItems.map((item) => (
                       <span
                         key={item}
-                        className="rounded-full bg-muted px-3.5 py-1.5 text-[13px] font-semibold"
+                        className="rounded-lg bg-muted px-3.5 py-1.5 text-[13px] font-semibold"
                       >
                         {item}
                       </span>
@@ -1064,7 +1064,7 @@ export function RestageApp() {
                     {designBrief.pieceReferences.map((piece) => (
                       <span
                         key={piece.id}
-                        className="rounded-full bg-tint px-3.5 py-1.5 text-[13px] font-semibold text-tint-foreground"
+                        className="rounded-lg bg-tint px-3.5 py-1.5 text-[13px] font-semibold text-tint-foreground"
                       >
                         {pieceChipLabel(piece)}
                       </span>
@@ -1090,7 +1090,7 @@ export function RestageApp() {
                     type="button"
                     onClick={openSource}
                     disabled={busy}
-                    className="h-12 rounded-full px-6 text-[15px] font-bold"
+                    className="h-12 rounded-lg px-6 text-[15px] font-bold"
                   >
                     {sourcing ? (
                       <Loader2 className="animate-spin" />
@@ -1103,7 +1103,7 @@ export function RestageApp() {
                     variant="secondary"
                     onClick={() => goTo("style")}
                     disabled={busy}
-                    className="h-12 rounded-full px-6 text-[15px] font-bold"
+                    className="h-12 rounded-lg px-6 text-[15px] font-bold"
                   >
                     Back
                   </Button>
@@ -1154,7 +1154,7 @@ export function RestageApp() {
                     type="button"
                     onClick={() => handleRefine(hotswapInstruction(pieces))}
                     disabled={busy || Boolean(assignmentError)}
-                    className="h-12 rounded-full px-6 text-[15px] font-bold"
+                    className="h-12 rounded-lg px-6 text-[15px] font-bold"
                   >
                     {refining ? (
                       <Loader2 className="animate-spin" />
@@ -1188,7 +1188,7 @@ export function RestageApp() {
                         {designBrief.designStrategy.materials.map((material) => (
                           <span
                             key={material}
-                            className="rounded-full bg-muted px-3 py-1.5 text-[13px] font-semibold"
+                            className="rounded-lg bg-muted px-3 py-1.5 text-[13px] font-semibold"
                           >
                             {material}
                           </span>
@@ -1235,7 +1235,7 @@ export function RestageApp() {
                       type="button"
                       variant="secondary"
                       onClick={() => setStep("style")}
-                      className="h-12 rounded-full px-6 text-[15px] font-bold"
+                      className="h-12 rounded-lg px-6 text-[15px] font-bold"
                     >
                       Back to style
                     </Button>
@@ -1273,7 +1273,7 @@ export function RestageApp() {
                       type="button"
                       variant="secondary"
                       onClick={() => goTo("render")}
-                      className="h-11 rounded-full px-5 text-[15px] font-bold"
+                      className="h-11 rounded-lg px-5 text-[15px] font-bold"
                     >
                       Back to render
                     </Button>
@@ -1281,7 +1281,7 @@ export function RestageApp() {
                       type="button"
                       variant="secondary"
                       onClick={() => goTo("style")}
-                      className="h-11 rounded-full px-5 text-[15px] font-bold"
+                      className="h-11 rounded-lg px-5 text-[15px] font-bold"
                     >
                       Back to style
                     </Button>
@@ -1289,7 +1289,7 @@ export function RestageApp() {
                       type="button"
                       variant="secondary"
                       onClick={() => goTo("pieces")}
-                      className="h-11 rounded-full px-5 text-[15px] font-bold"
+                      className="h-11 rounded-lg px-5 text-[15px] font-bold"
                     >
                       Back to pieces
                     </Button>
@@ -1297,7 +1297,7 @@ export function RestageApp() {
                       type="button"
                       variant="secondary"
                       onClick={() => goTo("space")}
-                      className="h-11 rounded-full px-5 text-[15px] font-bold"
+                      className="h-11 rounded-lg px-5 text-[15px] font-bold"
                     >
                       Back to upload
                     </Button>
@@ -1307,7 +1307,7 @@ export function RestageApp() {
                   <Button
                     type="button"
                     onClick={startNewGeneration}
-                    className="h-14 rounded-full px-8 text-[17px] font-bold"
+                    className="h-14 rounded-lg px-8 text-[17px] font-bold"
                   >
                     New generation
                   </Button>
