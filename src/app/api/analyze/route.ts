@@ -1,12 +1,14 @@
 import { analyzeRoom } from "@/lib/ai/analyze";
 import { dataUrlToImageInput } from "@/lib/ai/images";
 import { userBriefInputSchema } from "@/lib/ai/schemas";
-import { apiError, checkAiConfig, streamStatus } from "@/lib/api";
+import { apiError, checkAiConfig, streamStatus, requireOwner } from "@/lib/api";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const configError = checkAiConfig();
   if (configError) return configError;
 

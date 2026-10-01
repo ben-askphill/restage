@@ -1,12 +1,14 @@
 import { generateShoppingList } from "@/lib/ai/shopping";
 import { dataUrlToImageInput, urlToImageInput } from "@/lib/ai/images";
 import { designBriefSchema } from "@/lib/ai/schemas";
-import { apiError, checkAiConfig, checkBlobConfig, streamStatus } from "@/lib/api";
+import { apiError, checkAiConfig, checkBlobConfig, streamStatus, requireOwner } from "@/lib/api";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const configError = checkAiConfig();
   if (configError) return configError;
   const blobError = checkBlobConfig();

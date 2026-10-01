@@ -4,7 +4,7 @@ import { parsePiecePayloads } from "@/lib/ai/pieces";
 import { roomInventorySchema } from "@/lib/ai/schemas";
 import { loadManifest } from "@/lib/ai/styles";
 import { styleProfileToText } from "@/lib/ai/style-profile";
-import { apiError, checkAiConfig, streamStatus } from "@/lib/api";
+import { apiError, checkAiConfig, streamStatus, requireOwner } from "@/lib/api";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -27,6 +27,8 @@ async function resolveStyleProfileText(
 }
 
 export async function POST(request: Request) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const configError = checkAiConfig();
   if (configError) return configError;
 

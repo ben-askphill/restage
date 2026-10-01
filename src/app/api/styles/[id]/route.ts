@@ -4,7 +4,7 @@ import {
   regenerateIfStale,
   toClient,
 } from "@/lib/ai/styles";
-import { apiError, checkBlobConfig } from "@/lib/api";
+import { apiError, checkBlobConfig, requireOwner } from "@/lib/api";
 import { hasAiGateway } from "@/lib/env";
 
 export const runtime = "nodejs";
@@ -12,7 +12,9 @@ export const maxDuration = 300;
 
 type Context = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, { params }: Context) {
+export async function GET(request: Request, { params }: Context) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const blobError = checkBlobConfig();
   if (blobError) return blobError;
 
@@ -36,7 +38,9 @@ export async function GET(_request: Request, { params }: Context) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: Context) {
+export async function DELETE(request: Request, { params }: Context) {
+  const authError = requireOwner(request);
+  if (authError) return authError;
   const blobError = checkBlobConfig();
   if (blobError) return blobError;
 
