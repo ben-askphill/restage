@@ -681,8 +681,10 @@ export function RestageApp() {
 
       <main
         className={cn(
-          "mx-auto max-w-5xl space-y-10 px-5 pt-8 sm:px-10",
-          hasRender && step === "render" && !galleryOpen ? "pb-36" : "pb-16",
+          "mx-auto space-y-10 px-5 pt-8 pb-16 sm:px-10",
+          hasRender && step === "render" && !galleryOpen
+            ? "max-w-[90rem]"
+            : "max-w-5xl",
         )}
       >
         {galleryOpen ? (
@@ -990,7 +992,8 @@ export function RestageApp() {
             ) : null}
 
             {step === "render" && hasRender && designBrief && renderResult && roomDataUrl ? (
-              <section className="space-y-10">
+              <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,22rem)] lg:items-start lg:gap-x-8 lg:gap-y-10">
+              <section className="min-w-0 space-y-10 lg:col-start-1 lg:row-start-1">
                 <div className="space-y-1.5">
                   <h1 className="text-4xl font-extrabold tracking-[-0.025em]">
                     Render
@@ -1076,7 +1079,18 @@ export function RestageApp() {
                   onChange={setImageNotes}
                   disabled={busy}
                 />
+              </section>
 
+              <div className="lg:sticky lg:top-40 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:flex lg:max-h-[calc(100dvh-11rem)] lg:min-h-0 lg:flex-col lg:self-start lg:overflow-hidden">
+                <RefineBar
+                  onRefine={handleRefine}
+                  disabled={busy}
+                  notes={imageNotes}
+                  className="lg:min-h-0 lg:flex-1"
+                />
+              </div>
+
+              <div className="min-w-0 space-y-10 lg:col-start-1 lg:row-start-2">
                 <div className="space-y-4 rounded-3xl border border-border p-5 sm:p-6">
                   <div className="space-y-1">
                     <h3 className="text-[22px] font-extrabold tracking-[-0.02em]">
@@ -1163,7 +1177,8 @@ export function RestageApp() {
                     </div>
                   </div>
                 </div>
-              </section>
+              </div>
+              </div>
             ) : null}
 
             {step === "render" && !hasRender ? (
@@ -1271,13 +1286,6 @@ export function RestageApp() {
         )}
       </main>
 
-      {hasRender && step === "render" && !galleryOpen ? (
-        <RefineBar
-          onRefine={handleRefine}
-          disabled={busy}
-          allowEmpty={imageNotes.length > 0}
-        />
-      ) : null}
     </div>
   );
 }
